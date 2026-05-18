@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perbandingan Saham — StockSmart</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style-new.css">
+  <style>
+    /* Premium slider and tab styles */
+    .sector-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .sector-tab {
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      font-family: 'Sora', sans-serif;
+    }
+    .sector-tab:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+    .sector-tab.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+    
+    .slider-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      margin-bottom: 12px;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .slider-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .slider-value {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      color: var(--blue);
+      background: #eff6ff;
+      padding: 2px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .range-input {
+      width: 100%;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .range-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--blue);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .range-input::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .checkbox-cell {
+      width: 40px;
+      text-align: center;
+    }
+    .comparison-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .premium-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .premium-modal.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-content-card {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+      border: 1px solid var(--border);
+      transform: translateY(20px);
+      transition: transform 0.25s ease;
+    }
+    .premium-modal.open .modal-content-card {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <i class="ti ti-trending-up"></i>
+      <span>StockSmart</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/users/dashboard.html" class="nav-item"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></a>
+      <a href="/saham-list.html" class="nav-item"><i class="ti ti-building-bank"></i><span>Daftar Saham</span></a>
+      <a href="/users/analisis.html" class="nav-item active"><i class="ti ti-calculator"></i><span>Perbandingan Saham</span></a>
+      <a href="/users/hasil.html" class="nav-item"><i class="ti ti-trophy"></i><span>Hasil TOPSIS</span></a>
+      <a href="/users/rekomendasi.html" class="nav-item"><i class="ti ti-stars"></i><span>Rekomendasi</span></a>
+      <a href="/users/prediksi.html" class="nav-item"><i class="ti ti-chart-line"></i><span>Prediksi Trend</span></a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="#" onclick="logout()" class="nav-item text-danger-nav"><i class="ti ti-logout"></i><span>Logout</span></a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="btn-hamburger" onclick="document.getElementById('sidebar').classList.toggle('collapsed')">
+        <i class="ti ti-menu-2"></i>
+      </button>
+      <div class="topbar-title">Perbandingan Saham</div>
+      <div class="topbar-right">
+        <span class="topbar-user" id="topbarUser"><i class="ti ti-user-circle"></i> User</span>
+      </div>
+    </header>
+
+    <div class="page-content">
+      
+      <!-- HERO -->
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+        <div>
+          <h2 style="font-family:'Sora',sans-serif; font-size:22px; font-weight:700;">Perbandingan Saham Interaktif</h2>
+          <p style="color:var(--muted); font-size:14px; margin-top:2px;">Bandingkan saham default dengan saham kustom Anda, serta atur bobot preferensi investasi Anda.</p>
+        </div>
+      </div>
+
+      <!-- SECTOR SELECTION TABS -->
+      <div class="sector-tabs">
+        <div class="sector-tab active" onclick="switchSector('Perbankan')"><i class="ti ti-building-bank"></i> 🏢 Perbankan</div>
+        <div class="sector-tab" onclick="switchSector('Teknologi')"><i class="ti ti-cpu"></i> 💻 Teknologi</div>
+        <div class="sector-tab" onclick="switchSector('Konsumer')"><i class="ti ti-shopping-cart"></i> 🛒 Konsumer</div>
+        <div class="sector-tab" onclick="switchSector('Lainnya')"><i class="ti ti-stars"></i> 🌟 Sektor Lainnya</div>
+        <div class="sector-tab" onclick="switchSector('Semua')"><i class="ti ti-category"></i> Semua Saham</div>
+      </div>
+
+      <!-- TWO COL GRID: LEFT STOCKS CHECKLIST, RIGHT WEIGHT SLIDERS -->
+      <div class="two-col-grid">
+        
+        <!-- LEFT: STOCKS CHECKLIST -->
+        <div class="card-panel" style="padding:0; display:flex; flex-direction:column;">
+          <div class="panel-header" style="padding:18px 22px; margin-bottom:0; border-radius:14px 14px 0 0; display:flex; align-items:center;">
+            <i class="ti ti-checkbox" style="color:var(--blue);"></i>
+            Pilih Saham untuk Dibandingkan
+            <button class="btn-primary-spk" onclick="openAddModal()" style="margin-left:auto; padding:6px 12px; font-size:12px;">
+              <i class="ti ti-plus"></i> Tambah Saham Kustom
+            </button>
+          </div>
+          
+          <div class="table-wrap">
+            <table class="spk-table">
+              <thead>
+                <tr>
+                  <th class="checkbox-cell">
+                    <input type="checkbox" id="selectAll" class="comparison-checkbox" onchange="toggleSelectAll(this)">
+                  </th>
+                  <th>Kode</th>
+                  <th>Nama Perusahaan</th>
+                  <th>Harga</th>
+                  <th>PER</th>
+                  <th>PBV</th>
+                  <th>ROE</th>
+                  <th>DER</th>
+                  <th>EPS G.</th>
+                  <th style="text-align:center;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tabelComparisonSaham">
+                <tr><td colspan="9"><div class="loading-state"><i class="ti ti-loader-2 spin"></i> Memuat saham...</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- RIGHT: SLIDERS WEIGHT PANEL -->
+        <div class="card-panel">
+          <div class="panel-header">
+            <i class="ti ti-adjustments" style="color:var(--purple);"></i>
+            ⚙️ Sesuaikan Bobot Kriteria Anda
+          </div>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:20px;">
+            Geser slider untuk menentukan kriteria yang paling penting bagi keputusan Anda. Total bobot harus 1.0 (100%).
+          </p>
+
+          <!-- SLIDERS WRAPPER -->
+          <div id="slidersWrap">
+            <!-- Slider PER -->
+            <div class="slider-card">
+              <div class="slider-header">
+                <span class="slider-title">PER (Price to Earnings Ratio) <small style="color:var(--red); font-weight:normal;">(Cost)</small></span>
+                <span class="slider-value" id="val_C1">0.20</span>
+              </div>
+              <input type="range" min="0" max="1" step="0.01" value="0.20" class="range-input" id="slide_C1" oninput="onSliderChange('C1')">
+            </div>
+
+            <!-- Slider PBV -->
+            <div class="slider-card">
+              <div class="slider-header">
+                <span class="slider-title">PBV (Price to Book Value) <small style="color:var(--red); font-weight:normal;">(Cost)</small></span>
+                <span class="slider-value" id="val_C2">0.20</span>
+              </div>
+              <input type="range" min="0" max="1" step="0.01" value="0.20" class="range-input" id="slide_C2" oninput="onSliderChange('C2')">
+            </div>
+
+            <!-- Slider ROE -->
+            <div class="slider-card">
+              <div class="slider-header">
+                <span class="slider-title">ROE (Return on Equity %) <small style="color:var(--green); font-weight:normal;">(Benefit)</small></span>
+                <span class="slider-value" id="val_C3">0.20</span>
+              </div>
+              <input type="range" min="0" max="1" step="0.01" value="0.20" class="range-input" id="slide_C3" oninput="onSliderChange('C3')">
+            </div>
+
+            <!-- Slider DER -->
+            <div class="slider-card">
+              <div class="slider-header">
+                <span class="slider-title">DER (Debt to Equity Ratio) <small style="color:var(--red); font-weight:normal;">(Cost)</small></span>
+                <span class="slider-value" id="val_C4">0.20</span>
+              </div>
+              <input type="range" min="0" max="1" step="0.01" value="0.20" class="range-input" id="slide_C4" oninput="onSliderChange('C4')">
+            </div>
+
+            <!-- Slider EPS Growth -->
+            <div class="slider-card">
+              <div class="slider-header">
+                <span class="slider-title">EPS Growth (%) <small style="color:var(--green); font-weight:normal;">(Benefit)</small></span>
+                <span class="slider-value" id="val_C5">0.20</span>
+              </div>
+              <input type="range" min="0" max="1" step="0.01" value="0.20" class="range-input" id="slide_C5" oninput="onSliderChange('C5')">
+            </div>
+          </div>
+
+          <!-- SUMMARY ROW -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid var(--border); padding:12px 18px; border-radius:10px; margin-top:20px;">
+            <div>
+              <div style="font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase;">Total Bobot Preferensi</div>
+              <div id="dispTotalBobot" style="font-family:'Sora',sans-serif; font-size:22px; font-weight:700; color:var(--green); margin-top:2px;">1.00</div>
+            </div>
+            <button class="btn-secondary-spk" onclick="saveBobotKustom()" style="padding:8px 16px; font-size:13px; background:#fff;">
+              <i class="ti ti-device-floppy"></i> Simpan Bobot
+            </button>
+          </div>
+
+          <div id="bobotWarning" style="display:none; margin-top:12px; padding:10px 14px; background:#fef3c7; border-radius:8px; border:1px solid #fde68a; color:#b45309; font-size:12px;">
+            <i class="ti ti-alert-triangle"></i> Total bobot saat ini tidak sama dengan 1.0 (100%). Perhitungan TOPSIS akan tetap menormalisasi secara proporsional.
+          </div>
+
+          <!-- ACTION BUTTONS -->
+          <div style="margin-top:24px; display:flex; flex-direction:column; gap:10px;">
+            <button class="btn-primary-spk" onclick="hitungTopsis()" style="width:100%; padding:14px; font-size:16px; font-weight:700; justify-content:center; border-radius:10px; box-shadow:0 4px 15px rgba(37,99,235,0.25);">
+              <i class="ti ti-bolt"></i> ⚡ Bandingkan & Hitung TOPSIS
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode TOPSIS</div>
+    </div>
+  </main>
+
+  <!-- MODAL: ADD CUSTOM COMPARISON STOCK -->
+  <div class="premium-modal" id="addStockModal">
+    <div class="modal-content-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h4 style="font-family:'Sora',sans-serif; font-weight:700; margin:0;"><i class="ti ti-building-bank" style="color:var(--blue);"></i> Tambah Saham Pembandingan</h4>
+        <button onclick="closeAddModal()" style="background:none; border:none; font-size:22px; color:var(--muted); cursor:pointer;"><i class="ti ti-x"></i></button>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-6">
+          <label>Kode Saham <span style="color:var(--red);">*</span></label>
+          <input type="text" id="m_kode" class="form-control" placeholder="Contoh: ARTO" style="text-transform:uppercase;">
+        </div>
+        <div class="col-6">
+          <label>Nama Perusahaan <span style="color:var(--red);">*</span></label>
+          <input type="text" id="m_nama" class="form-control" placeholder="Contoh: Bank Artos">
+        </div>
+        <div class="col-6">
+          <label>Sektor</label>
+          <select id="m_sektor" class="form-select">
+            <option value="Perbankan">Perbankan</option>
+            <option value="Teknologi">Teknologi</option>
+            <option value="Konsumer">Konsumer</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label>Harga Saham (Rp) <span style="color:var(--red);">*</span></label>
+          <input type="number" id="m_harga" class="form-control" placeholder="Contoh: 9800">
+        </div>
+        <div class="col-4">
+          <label>PER (Cost)</label>
+          <input type="number" step="0.01" id="m_per" class="form-control" placeholder="0.00">
+        </div>
+        <div class="col-4">
+          <label>PBV (Cost)</label>
+          <input type="number" step="0.01" id="m_pbv" class="form-control" placeholder="0.00">
+        </div>
+        <div class="col-4">
+          <label>ROE (%)</label>
+          <input type="number" step="0.01" id="m_roe" class="form-control" placeholder="0.00">
+        </div>
+        <div class="col-6">
+          <label>DER (Cost)</label>
+          <input type="number" step="0.01" id="m_der" class="form-control" placeholder="0.00">
+        </div>
+        <div class="col-6">
+          <label>EPS Growth (%)</label>
+          <input type="number" step="0.01" id="m_eps" class="form-control" placeholder="0.00">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:24px;">
+        <button class="btn-primary-spk" onclick="saveCustomStock()" style="flex:1; justify-content:center;">
+          <i class="ti ti-device-floppy"></i> Simpan Saham
+        </button>
+        <button class="btn-secondary-spk" onclick="closeAddModal()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // AUTH LOGIC
+    const loggedUser = JSON.parse(localStorage.getItem('user'));
+    if (!loggedUser) {
+      window.location.href = '/auth/login.html';
+    } else {
+      document.getElementById('topbarUser').innerHTML = `<i class="ti ti-user-circle"></i> ${loggedUser.username} (${loggedUser.role === 'admin' ? 'Admin' : 'User'})`;
+    }
+
+    function logout() {
+      localStorage.removeItem('user');
+      window.location.href = '/auth/login.html';
+    }
+
+    // STATE VARIABLES
+    let allSaham = [];
+    let activeSector = 'Perbankan';
+
+    // LOAD INITIAL CRITERIA AND STOCKS
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadWeights();
+      await loadSaham();
+    });
+
+    // 1. LOAD CRITERIA WEIGHTS FOR SLIDERS
+    async function loadWeights() {
+      try {
+        const username = loggedUser ? loggedUser.username : '';
+        const res = await fetch(`http://localhost:3000/kriteria/user?username=${username}`);
+        const kriteria = await res.json();
+        
+        kriteria.forEach(k => {
+          const slider = document.getElementById(`slide_${k.kode_kriteria}`);
+          const display = document.getElementById(`val_${k.kode_kriteria}`);
+          if (slider && display) {
+            slider.value = k.bobot;
+            display.textContent = k.bobot.toFixed(2);
+          }
+        });
+        updateTotalBobot();
+      } catch (e) {
+        console.error("Gagal memuat bobot", e);
+      }
+    }
+
+    // SLIDER INTERACTION LOGIC
+    function onSliderChange(id) {
+      const slider = document.getElementById(`slide_${id}`);
+      const display = document.getElementById(`val_${id}`);
+      if (slider && display) {
+        display.textContent = parseFloat(slider.value).toFixed(2);
+      }
+      updateTotalBobot();
+    }
+
+    function updateTotalBobot() {
+      const ids = ['C1', 'C2', 'C3', 'C4', 'C5'];
+      const total = ids.reduce((sum, id) => sum + parseFloat(document.getElementById(`slide_${id}`).value || 0), 0);
+      
+      const disp = document.getElementById('dispTotalBobot');
+      const warn = document.getElementById('bobotWarning');
+      
+      disp.textContent = total.toFixed(2);
+      
+      const ok = Math.abs(total - 1.0) < 0.001;
+      disp.style.color = ok ? 'var(--green)' : 'var(--red)';
+      warn.style.display = ok ? 'none' : 'block';
+    }
+
+    // SAVE WEIGHTS TO DATABASE
+    async function saveBobotKustom() {
+      try {
+        const bobot = {
+          C1: parseFloat(document.getElementById('slide_C1').value),
+          C2: parseFloat(document.getElementById('slide_C2').value),
+          C3: parseFloat(document.getElementById('slide_C3').value),
+          C4: parseFloat(document.getElementById('slide_C4').value),
+          C5: parseFloat(document.getElementById('slide_C5').value)
+        };
+
+        const res = await fetch('http://localhost:3000/kriteria/user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: loggedUser.username, bobot })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+          alert('Preferensi bobot Anda berhasil disimpan ke database!');
+        } else {
+          alert('Gagal menyimpan bobot: ' + data.message);
+        }
+      } catch (e) {
+        alert('Gagal terhubung ke server.');
+      }
+    }
+
+    // 2. LOAD STOCKS
+    async function loadSaham() {
+      try {
+        const username = loggedUser ? loggedUser.username : '';
+        const res = await fetch(`http://localhost:3000/saham?username=${username}`);
+        allSaham = await res.json();
+        renderSaham();
+      } catch(e) {
+        document.getElementById('tabelComparisonSaham').innerHTML = `<tr><td colspan="10" style="text-align:center; padding:32px; color:var(--muted);">Gagal memuat data saham.</td></tr>`;
+      }
+    }
+
+    // SWITCH SECTOR TAB
+    function switchSector(sector) {
+      activeSector = sector;
+      
+      // Update active class on tab buttons
+      const tabs = document.querySelectorAll('.sector-tab');
+      tabs.forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.textContent.includes(sector) || (sector === 'Semua' && tab.textContent.includes('Semua'))) {
+          tab.classList.add('active');
+        }
+      });
+
+      renderSaham();
+    }
+
+    // RENDER CHECKLIST TABLE
+    function renderSaham() {
+      let filtered = [];
+      if (activeSector === 'Semua') {
+        filtered = allSaham;
+      } else {
+        filtered = allSaham.filter(s => s.sektor === activeSector);
+      }
+
+      const tbody = document.getElementById('tabelComparisonSaham');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><i class="ti ti-database-off"></i><p>Belum ada data saham di sektor ini.</p></div></td></tr>`;
+        document.getElementById('selectAll').checked = false;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach((s, idx) => {
+        // Owner logic: can delete if it's their kustom stock. If default (username null), only Admin can delete.
+        const canDelete = s.username === loggedUser.username || (s.username === null && loggedUser.role === 'admin');
+        
+        const deleteButton = canDelete ? `
+          <button class="btn-danger-spk" onclick="deleteStock('${s.kode_saham}')" style="padding:4px 8px; font-size:11px;">
+            <i class="ti ti-trash"></i> Hapus
+          </button>` : `<span style="font-size:11px; color:var(--muted);"><i class="ti ti-lock"></i> Default</span>`;
+
+        html += `
+          <tr>
+            <td class="checkbox-cell">
+              <input type="checkbox" value="${s.kode_saham}" class="comparison-checkbox stock-chk" checked onchange="updateSelectAllState()">
+            </td>
+            <td><span class="kode-pill">${s.clean_kode || s.kode_saham}</span></td>
+            <td style="font-weight:500;">
+              ${s.nama_perusahaan}
+              ${s.username ? `<span style="font-size:10px; background:#f0fdf4; color:#16a34a; padding:2px 6px; border-radius:4px; margin-left:4px; font-weight:600;">Kustom Anda</span>` : ''}
+            </td>
+            <td style="font-weight:600; color:var(--blue);">Rp ${s.harga ? s.harga.toLocaleString('id-ID') : '0'}</td>
+            <td>${s.per}</td>
+            <td>${s.pbv}</td>
+            <td>${s.roe}</td>
+            <td>${s.der}</td>
+            <td>${s.eps_growth}</td>
+            <td style="text-align:center;">${deleteButton}</td>
+          </tr>`;
+      });
+
+      tbody.innerHTML = html;
+      document.getElementById('selectAll').checked = true; // Checked by default
+    }
+
+    // CHECKBOXES HELPER FUNCTIONS
+    function toggleSelectAll(master) {
+      const chks = document.querySelectorAll('.stock-chk');
+      chks.forEach(chk => chk.checked = master.checked);
+    }
+
+    function updateSelectAllState() {
+      const chks = document.querySelectorAll('.stock-chk');
+      const checkedChks = document.querySelectorAll('.stock-chk:checked');
+      document.getElementById('selectAll').checked = chks.length === checkedChks.length;
+    }
+
+    // DELETE STOCK (Default or Custom)
+    async function deleteStock(kode) {
+      if (!confirm(`Yakin ingin menghapus saham ${kode}? Tindakan ini permanen.`)) return;
+      try {
+        const res = await fetch(`http://localhost:3000/saham/${kode}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          alert('Saham berhasil dihapus!');
+          await loadSaham();
+        } else {
+          alert('Gagal menghapus: ' + data.message);
+        }
+      } catch (e) {
+        alert('Gagal terhubung ke server.');
+      }
+    }
+
+    // MODAL STATE LOGIC
+    function openAddModal() {
+      document.getElementById('m_sektor').value = activeSector !== 'Semua' ? activeSector : 'Perbankan';
+      document.getElementById('m_kode').value = '';
+      document.getElementById('m_nama').value = '';
+      ['m_harga','m_per','m_pbv','m_roe','m_der','m_eps'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('addStockModal').classList.add('open');
+    }
+
+    function closeAddModal() {
+      document.getElementById('addStockModal').classList.remove('open');
+    }
+
+    // SAVE CUSTOM STOCK
+    async function saveCustomStock() {
+      const kode = document.getElementById('m_kode').value.trim().toUpperCase();
+      const nama = document.getElementById('m_nama').value.trim();
+      const harga = parseInt(document.getElementById('m_harga').value) || 0;
+      const sektor = document.getElementById('m_sektor').value;
+      const per = parseFloat(document.getElementById('m_per').value) || 0;
+      const pbv = parseFloat(document.getElementById('m_pbv').value) || 0;
+      const roe = parseFloat(document.getElementById('m_roe').value) || 0;
+      const der = parseFloat(document.getElementById('m_der').value) || 0;
+      const eps = parseFloat(document.getElementById('m_eps').value) || 0;
+
+      if (!kode || !nama || isNaN(harga)) {
+        alert('Kode saham, Nama perusahaan, dan Harga wajib diisi!');
+        return;
+      }
+
+      try {
+        const payload = {
+          kode_saham: kode,
+          nama_perusahaan: nama,
+          harga,
+          per, pbv, roe, der, eps_growth: eps,
+          sektor,
+          username: loggedUser.username // Save to this user specifically
+        };
+
+        const res = await fetch('http://localhost:3000/saham', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          alert('Saham kustom perbandingan Anda berhasil ditambahkan!');
+          closeAddModal();
+          await loadSaham();
+        } else {
+          alert('Gagal menyimpan: ' + data.message);
+        }
+      } catch (e) {
+        alert('Gagal menyimpan. Coba lagi.');
+      }
+    }
+
+    // 3. EXECUTE TOPSIS CALCULATION
+    async function hitungTopsis() {
+      const checkedBoxes = document.querySelectorAll('.stock-chk:checked');
+      if (checkedBoxes.length < 2) {
+        alert('Silakan centang minimal 2 saham untuk perbandingan agar hasil TOPSIS valid!');
+        return;
+      }
+
+      const saham_terpilih = Array.from(checkedBoxes).map(cb => cb.value);
+
+      // Ambil bobot langsung dari slider
+      const bobot = {
+        C1: parseFloat(document.getElementById('slide_C1').value),
+        C2: parseFloat(document.getElementById('slide_C2').value),
+        C3: parseFloat(document.getElementById('slide_C3').value),
+        C4: parseFloat(document.getElementById('slide_C4').value),
+        C5: parseFloat(document.getElementById('slide_C5').value)
+      };
+
+      try {
+        const res = await fetch('http://localhost:3000/topsis/hitung', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: loggedUser.username,
+            saham_terpilih,
+            bobot
+          })
+        });
+
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          // Redirect to results page
+          window.location.href = '/users/hasil.html';
+        } else {
+          alert('Gagal memproses TOPSIS: ' + (data.message || 'Error'));
+        }
+      } catch (e) {
+        alert('Gagal terhubung ke server.');
+      }
+    }
+  </script>
+</body>
+</html>

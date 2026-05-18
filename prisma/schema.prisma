@@ -1,0 +1,71 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model users {
+  username      String          @id
+  password      String
+  tipe_pengguna String
+  hasil         hasil[]
+  saham         saham[]
+  user_kriteria user_kriteria[]
+}
+
+model saham {
+  kode_saham      String      @id
+  nama_perusahaan String
+  harga           Int         @default(0)
+  per             Float
+  pbv             Float
+  roe             Float
+  der             Float
+  eps_growth      Float
+  sektor          String      @default("Perbankan")
+  username        String?
+  users           users?      @relation(fields: [username], references: [username])
+  hasil           hasil[]
+  penilaian       penilaian[]
+}
+
+model kriteria {
+  kode_kriteria String          @id
+  nama_kriteria String
+  bobot         Float
+  tipe          String
+  penilaian     penilaian[]
+  user_kriteria user_kriteria[]
+}
+
+model penilaian {
+  kode_penilaian String   @id
+  kode_saham     String
+  kode_kriteria  String
+  nilai          Float
+  saham          saham    @relation(fields: [kode_saham], references: [kode_saham])
+  kriteria       kriteria @relation(fields: [kode_kriteria], references: [kode_kriteria])
+}
+
+model hasil {
+  kode_hasil       String @id
+  username         String
+  kode_saham       String
+  nilai_preferensi Float
+  ranking          Int
+  users            users  @relation(fields: [username], references: [username])
+  saham            saham  @relation(fields: [kode_saham], references: [kode_saham])
+}
+
+model user_kriteria {
+  username      String
+  kode_kriteria String
+  bobot         Float
+  users         users    @relation(fields: [username], references: [username])
+  kriteria      kriteria @relation(fields: [kode_kriteria], references: [kode_kriteria])
+
+  @@id([username, kode_kriteria])
+}

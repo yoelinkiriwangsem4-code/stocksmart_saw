@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daftar Saham — StockSmart</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style-new.css">
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <i class="ti ti-trending-up"></i>
+      <span>StockSmart</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/users/dashboard.html" class="nav-item"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></a>
+      <a href="/saham-list.html" class="nav-item active"><i class="ti ti-building-bank"></i><span>Daftar Saham</span></a>
+      <a href="/users/analisis.html" class="nav-item"><i class="ti ti-calculator"></i><span>Input Analisis</span></a>
+      <a href="/users/hasil.html" class="nav-item"><i class="ti ti-trophy"></i><span>Hasil TOPSIS</span></a>
+      <a href="/users/rekomendasi.html" class="nav-item"><i class="ti ti-stars"></i><span>Rekomendasi</span></a>
+      <a href="/users/prediksi.html" class="nav-item"><i class="ti ti-chart-line"></i><span>Prediksi Trend</span></a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="#" onclick="logout()" class="nav-item text-danger-nav"><i class="ti ti-logout"></i><span>Logout</span></a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="btn-hamburger" onclick="document.getElementById('sidebar').classList.toggle('collapsed')">
+        <i class="ti ti-menu-2"></i>
+      </button>
+      <div class="topbar-title">Daftar Saham</div>
+      <div class="topbar-right">
+        <span class="topbar-user" id="topbarUser"><i class="ti ti-user-circle"></i> Admin</span>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- HEADER ROW -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div>
+          <h2 style="font-family:'Sora',sans-serif; font-size:20px; font-weight:700;">Daftar Saham</h2>
+          <p style="color:var(--muted); font-size:14px; margin-top:2px;">Kelola seluruh data saham yang digunakan dalam perhitungan TOPSIS</p>
+        </div>
+        <button class="btn-primary-spk" onclick="showForm()">
+          <i class="ti ti-plus"></i> Tambah Saham
+        </button>
+      </div>
+
+      <!-- SEARCH BAR -->
+      <div class="card-panel" style="padding:16px 20px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <i class="ti ti-search" style="color:var(--muted); font-size:18px;"></i>
+          <input type="text" id="searchInput" class="form-control" placeholder="Cari kode atau nama saham..." oninput="filterSaham()" style="border:none; outline:none; font-size:14px; padding:4px 0; flex:1;">
+        </div>
+      </div>
+
+      <!-- FORM TAMBAH/EDIT (hidden by default) -->
+      <div class="form-section" id="formPanel" style="display:none;">
+        <h4><i class="ti ti-forms"></i> <span id="formTitle">Tambah Saham Baru</span></h4>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label>Kode Saham</label>
+            <input type="text" id="f_kode" class="form-control" placeholder="Contoh: BBCA" style="text-transform:uppercase;">
+          </div>
+          <div class="col-md-4">
+            <label>Nama Perusahaan</label>
+            <input type="text" id="f_nama" class="form-control" placeholder="Contoh: Bank Central Asia">
+          </div>
+          <div class="col-md-4">
+            <label>Harga Saham (Rp)</label>
+            <input type="number" id="f_harga" class="form-control" placeholder="Contoh: 9800">
+          </div>
+          <div class="col-md-4">
+            <label>PER <small style="color:var(--muted)">(Price to Earnings Ratio)</small></label>
+            <input type="number" step="0.01" id="f_per" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label>PBV <small style="color:var(--muted)">(Price to Book Value)</small></label>
+            <input type="number" step="0.01" id="f_pbv" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label>ROE <small style="color:var(--muted)">(Return on Equity %)</small></label>
+            <input type="number" step="0.01" id="f_roe" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label>DER <small style="color:var(--muted)">(Debt to Equity Ratio)</small></label>
+            <input type="number" step="0.01" id="f_der" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label>EPS Growth <small style="color:var(--muted)">(Earnings Per Share %)</small></label>
+            <input type="number" step="0.01" id="f_eps" class="form-control">
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:18px;">
+          <button class="btn-primary-spk" onclick="simpanSaham()">
+            <i class="ti ti-device-floppy"></i> <span id="btnSimpanLabel">Simpan</span>
+          </button>
+          <button class="btn-secondary-spk" onclick="hideForm()">
+            <i class="ti ti-x"></i> Batal
+          </button>
+        </div>
+      </div>
+
+      <!-- TABEL SAHAM -->
+      <div class="card-panel" style="padding:0;">
+        <div class="panel-header" style="padding:18px 22px; margin-bottom:0; border-radius:14px 14px 0 0;">
+          <i class="ti ti-building-bank"></i>
+          Data Saham
+          <span id="countBadge" style="margin-left:auto; background:#eff6ff; color:#1d4ed8; font-size:12px; padding:3px 10px; border-radius:999px; font-weight:600;"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="spk-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Kode</th>
+                <th>Nama Perusahaan</th>
+                <th>Harga</th>
+                <th>PER</th>
+                <th>PBV</th>
+                <th>ROE</th>
+                <th>DER</th>
+                <th>EPS Growth</th>
+                <th style="text-align:center;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tabelBody">
+              <tr><td colspan="9" style="text-align:center; padding:32px; color:var(--muted);">
+                <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Memuat data...</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- KETERANGAN KRITERIA -->
+      <div class="card-panel">
+        <div class="panel-header">
+          <i class="ti ti-info-circle"></i>
+          Keterangan Kriteria TOPSIS
+        </div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div style="padding:14px; background:#f8fafc; border-radius:10px; border:1px solid var(--border);">
+              <div style="font-weight:600; font-size:14px; color:var(--blue); margin-bottom:4px;">PER — Biaya (Cost)</div>
+              <div style="font-size:13px; color:var(--muted);">Price to Earnings Ratio. Semakin kecil nilainya, semakin baik (saham lebih murah relatif terhadap laba).</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div style="padding:14px; background:#f8fafc; border-radius:10px; border:1px solid var(--border);">
+              <div style="font-weight:600; font-size:14px; color:var(--blue); margin-bottom:4px;">PBV — Biaya (Cost)</div>
+              <div style="font-size:13px; color:var(--muted);">Price to Book Value. Semakin kecil nilainya, semakin murah dibanding nilai buku aset perusahaan.</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div style="padding:14px; background:#f8fafc; border-radius:10px; border:1px solid var(--border);">
+              <div style="font-weight:600; font-size:14px; color:var(--green); margin-bottom:4px;">ROE — Benefit</div>
+              <div style="font-size:13px; color:var(--muted);">Return on Equity. Semakin besar nilainya, semakin tinggi efisiensi penggunaan modal perusahaan.</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div style="padding:14px; background:#f8fafc; border-radius:10px; border:1px solid var(--border);">
+              <div style="font-weight:600; font-size:14px; color:var(--blue); margin-bottom:4px;">DER — Biaya (Cost)</div>
+              <div style="font-size:13px; color:var(--muted);">Debt to Equity Ratio. Semakin kecil nilainya, semakin rendah risiko utang perusahaan.</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div style="padding:14px; background:#f8fafc; border-radius:10px; border:1px solid var(--border);">
+              <div style="font-weight:600; font-size:14px; color:var(--green); margin-bottom:4px;">EPS Growth — Benefit</div>
+              <div style="font-size:13px; color:var(--muted);">Earnings Per Share Growth. Semakin besar nilainya, semakin bagus pertumbuhan laba per saham.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode TOPSIS</div>
+    </div>
+  </main>
+
+  <script>
+    // CHECK LOGIN & AUTH STATE
+    const loggedUser = JSON.parse(localStorage.getItem('user'));
+    if (!loggedUser) {
+      window.location.href = '/auth/login.html';
+    } else {
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById('topbarUser').innerHTML = `<i class="ti ti-user-circle"></i> ${loggedUser.username} (${loggedUser.role === 'admin' ? 'Admin' : 'User'})`;
+        
+        // RBAC: Hide CRUD if not admin
+        if (loggedUser.role !== 'admin') {
+          const btnAdd = document.querySelector('.btn-primary-spk');
+          if (btnAdd) btnAdd.style.display = 'none';
+          
+          const ths = document.querySelectorAll('.spk-table th');
+          if (ths.length > 0) {
+            ths[ths.length - 1].style.display = 'none';
+          }
+        }
+      });
+    }
+
+    function logout() {
+      localStorage.removeItem('user');
+      window.location.href = '/auth/login.html';
+    }
+
+    const API_BASE = 'http://localhost:3000/saham';
+    let allData = [];
+    let editMode = false;
+    let editKode = null;
+
+    async function loadSaham() {
+      try {
+        const queryParam = loggedUser ? '?username=' + loggedUser.username : '';
+        const res = await fetch(API_BASE + queryParam);
+        allData = await res.json();
+        renderTable(allData);
+      } catch(e) {
+        document.getElementById('tabelBody').innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:32px;">Gagal memuat data. Pastikan server berjalan.</td></tr>`;
+      }
+    }
+
+    function renderTable(data) {
+      document.getElementById('countBadge').textContent = data.length + ' saham';
+      if (data.length === 0) {
+        document.getElementById('tabelBody').innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="ti ti-database-off"></i><p>Belum ada data saham</p></div></td></tr>`;
+        return;
+      }
+      let html = '';
+      data.forEach((item, i) => {
+        const showAction = loggedUser && loggedUser.role === 'admin';
+        const actionCell = showAction ? `
+          <td style="text-align:center; white-space:nowrap;">
+            <button class="btn-warning-spk" onclick="editSaham('${item.kode_saham}')">
+              <i class="ti ti-edit"></i> Edit
+            </button>
+            <button class="btn-danger-spk" onclick="hapusSaham('${item.kode_saham}')" style="margin-left:4px;">
+              <i class="ti ti-trash"></i> Hapus
+            </button>
+          </td>` : '';
+
+        html += `
+          <tr>
+            <td style="color:var(--muted); font-size:13px;">${i + 1}</td>
+            <td><span class="kode-pill">${item.clean_kode || item.kode_saham}</span></td>
+            <td style="font-weight:500;">${item.nama_perusahaan}</td>
+            <td style="font-weight:600; color:var(--blue);">Rp ${item.harga ? item.harga.toLocaleString('id-ID') : '0'}</td>
+            <td>${item.per}</td>
+            <td>${item.pbv}</td>
+            <td>${item.roe}</td>
+            <td>${item.der}</td>
+            <td>${item.eps_growth}</td>
+            ${actionCell}
+          </tr>`;
+      });
+      document.getElementById('tabelBody').innerHTML = html;
+    }
+
+    function filterSaham() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = allData.filter(d =>
+        d.kode_saham.toLowerCase().includes(q) ||
+        d.nama_perusahaan.toLowerCase().includes(q)
+      );
+      renderTable(filtered);
+    }
+
+    function showForm() {
+      editMode = false;
+      editKode = null;
+      document.getElementById('formTitle').textContent = 'Tambah Saham Baru';
+      document.getElementById('btnSimpanLabel').textContent = 'Simpan';
+      document.getElementById('f_kode').disabled = false;
+      ['f_kode','f_nama','f_harga','f_per','f_pbv','f_roe','f_der','f_eps'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('formPanel').style.display = 'block';
+      document.getElementById('formPanel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function hideForm() {
+      document.getElementById('formPanel').style.display = 'none';
+    }
+
+    function editSaham(kode) {
+      const item = allData.find(d => d.kode_saham === kode);
+      if (!item) return;
+      editMode = true;
+      editKode = kode;
+      document.getElementById('formTitle').textContent = 'Edit Data Saham';
+      document.getElementById('btnSimpanLabel').textContent = 'Update';
+      document.getElementById('f_kode').value = item.kode_saham;
+      document.getElementById('f_kode').disabled = true;
+      document.getElementById('f_nama').value = item.nama_perusahaan;
+      document.getElementById('f_harga').value = item.harga || 0;
+      document.getElementById('f_per').value = item.per;
+      document.getElementById('f_pbv').value = item.pbv;
+      document.getElementById('f_roe').value = item.roe;
+      document.getElementById('f_der').value = item.der;
+      document.getElementById('f_eps').value = item.eps_growth;
+      document.getElementById('formPanel').style.display = 'block';
+      document.getElementById('formPanel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function simpanSaham() {
+      const kode = document.getElementById('f_kode').value.trim().toUpperCase();
+      const nama = document.getElementById('f_nama').value.trim();
+      const harga = parseInt(document.getElementById('f_harga').value) || 0;
+      const per  = parseFloat(document.getElementById('f_per').value);
+      const pbv  = parseFloat(document.getElementById('f_pbv').value);
+      const roe  = parseFloat(document.getElementById('f_roe').value);
+      const der  = parseFloat(document.getElementById('f_der').value);
+      const eps  = parseFloat(document.getElementById('f_eps').value);
+
+      if (!kode || !nama || isNaN(harga) || isNaN(per) || isNaN(pbv) || isNaN(roe) || isNaN(der) || isNaN(eps)) {
+        alert('Harap isi semua field dengan benar!'); return;
+      }
+
+      const payload = { kode_saham: kode, nama_perusahaan: nama, harga, per, pbv, roe, der, eps_growth: eps };
+
+      try {
+        if (editMode) {
+          await fetch(API_BASE + '/' + editKode, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nama_perusahaan: nama, harga, per, pbv, roe, der, eps_growth: eps })
+          });
+          alert('Data berhasil diupdate!');
+        } else {
+          await fetch(API_BASE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          alert('Data berhasil disimpan!');
+        }
+        hideForm();
+        loadSaham();
+      } catch(e) {
+        alert('Gagal menyimpan data. Coba lagi.');
+      }
+    }
+
+    async function hapusSaham(kode) {
+      if (!confirm(`Yakin hapus saham ${kode}? Data ini akan dihapus permanen.`)) return;
+      try {
+        await fetch(API_BASE + '/' + kode, { method: 'DELETE' });
+        alert('Data berhasil dihapus!');
+        loadSaham();
+      } catch(e) {
+        alert('Gagal menghapus data.');
+      }
+    }
+
+    loadSaham();
+  </script>
+</body>
+</html>

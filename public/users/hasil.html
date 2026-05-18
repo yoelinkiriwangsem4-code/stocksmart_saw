@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasil TOPSIS — StockSmart</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style-new.css">
+</head>
+<body>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><i class="ti ti-trending-up"></i><span>StockSmart</span></div>
+    <nav class="sidebar-nav">
+      <a href="/users/dashboard.html" class="nav-item"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></a>
+      <a href="/saham-list.html" class="nav-item"><i class="ti ti-building-bank"></i><span>Daftar Saham</span></a>
+      <a href="/users/analisis.html" class="nav-item"><i class="ti ti-calculator"></i><span>Input Analisis</span></a>
+      <a href="/users/hasil.html" class="nav-item active"><i class="ti ti-trophy"></i><span>Hasil TOPSIS</span></a>
+      <a href="/users/rekomendasi.html" class="nav-item"><i class="ti ti-stars"></i><span>Rekomendasi</span></a>
+      <a href="/users/prediksi.html" class="nav-item"><i class="ti ti-chart-line"></i><span>Prediksi Trend</span></a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="#" onclick="logout()" class="nav-item text-danger-nav"><i class="ti ti-logout"></i><span>Logout</span></a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <button class="btn-hamburger" onclick="document.getElementById('sidebar').classList.toggle('collapsed')">
+        <i class="ti ti-menu-2"></i>
+      </button>
+      <div class="topbar-title">Hasil Ranking TOPSIS</div>
+      <div class="topbar-right"><span class="topbar-user" id="topbarUser"><i class="ti ti-user-circle"></i> Admin</span></div>
+    </header>
+
+    <div class="page-content">
+
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+          <h2 style="font-family:'Sora',sans-serif; font-size:20px; font-weight:700;">Hasil Perhitungan TOPSIS</h2>
+          <p style="color:var(--muted); font-size:14px; margin-top:2px;">Ranking saham berdasarkan nilai preferensi TOPSIS dari yang tertinggi ke terendah</p>
+        </div>
+        <button class="btn btn-primary" onclick="hitungUlangTopsis()" style="background:var(--blue); border:none; display:flex; align-items:center; gap:6px; font-family:'Sora',sans-serif; font-weight:600; padding:8px 16px; border-radius:8px;">
+          <i class="ti ti-refresh"></i> Hitung Ulang
+        </button>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stats-grid" id="statsRow">
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="ti ti-list-numbers"></i></div>
+          <div><div class="stat-label">Total Data</div><div class="stat-value" id="s_total">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="ti ti-trophy"></i></div>
+          <div><div class="stat-label">Peringkat 1</div><div class="stat-value" id="s_rank1">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon amber"><i class="ti ti-chart-line"></i></div>
+          <div><div class="stat-label">Nilai Tertinggi</div><div class="stat-value" id="s_max">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple"><i class="ti ti-stars"></i></div>
+          <div><div class="stat-label">Sangat Direkomendasikan</div><div class="stat-value" id="s_rekom">—</div></div>
+        </div>
+      </div>
+
+      <!-- CHART -->
+      <div class="card-panel">
+        <div class="panel-header"><i class="ti ti-chart-bar"></i> Grafik Nilai Preferensi</div>
+        <div style="position:relative; height:280px;">
+          <canvas id="chartHasil" role="img" aria-label="Grafik ranking nilai preferensi TOPSIS seluruh saham">Data nilai preferensi TOPSIS.</canvas>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="card-panel" style="padding:0;">
+        <div class="panel-header" style="padding:18px 22px; margin-bottom:0; border-radius:14px 14px 0 0;">
+          <i class="ti ti-trophy"></i>
+          Tabel Ranking Lengkap
+          <button onclick="loadHasil()" style="margin-left:auto; background:none; border:1px solid var(--border); border-radius:6px; padding:5px 12px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:5px;">
+            <i class="ti ti-refresh"></i> Refresh
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="spk-table">
+            <thead>
+              <tr>
+                <th>Ranking</th>
+                <th>Kode Saham</th>
+                <th>Nama Perusahaan</th>
+                <th>Nilai Preferensi</th>
+                <th>Progress</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="hasilBody">
+              <tr><td colspan="6"><div class="loading-state"><i class="ti ti-loader-2 spin"></i> Menghitung TOPSIS...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LEGEND -->
+      <div class="card-panel">
+        <div class="panel-header"><i class="ti ti-info-circle"></i> Keterangan Status</div>
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:#f0fdf4; border-radius:10px; flex:1;">
+            <span class="badge-status sangat"><i class="ti ti-star"></i> Sangat Direkomendasikan</span>
+            <span style="font-size:13px; color:var(--muted);">Nilai preferensi ≥ 0.60 (peringkat tertinggi)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:#eff6ff; border-radius:10px; flex:1;">
+            <span class="badge-status direk"><i class="ti ti-thumb-up"></i> Direkomendasikan</span>
+            <span style="font-size:13px; color:var(--muted);">Nilai preferensi 0.40 – 0.59</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:12px 16px; background:#f8fafc; border-radius:10px; flex:1;">
+            <span class="badge-status pertim"><i class="ti ti-minus"></i> Dipertimbangkan</span>
+            <span style="font-size:13px; color:var(--muted);">Nilai preferensi &lt; 0.40</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode TOPSIS</div>
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script>
+    // CHECK LOGIN & AUTH STATE
+    const loggedUser = JSON.parse(localStorage.getItem('user'));
+    if (!loggedUser) {
+      window.location.href = '/auth/login.html';
+    } else {
+      document.getElementById('topbarUser').innerHTML = `<i class="ti ti-user-circle"></i> ${loggedUser.username} (${loggedUser.role === 'admin' ? 'Admin' : 'User'})`;
+    }
+
+    function logout() {
+      localStorage.removeItem('user');
+      window.location.href = '/auth/login.html';
+    }
+
+    let chartInstance = null;
+
+    async function loadHasil() {
+      try {
+        const res = await fetch('http://localhost:3000/topsis/saved?username=' + loggedUser.username);
+        const data = await res.json();
+
+        if (!data.length) {
+          // Clean Stats
+          document.getElementById('s_total').textContent = '0';
+          document.getElementById('s_rank1').textContent = '—';
+          document.getElementById('s_max').textContent = '—';
+          document.getElementById('s_rekom').textContent = '0 saham';
+
+          // Empty state in table
+          document.getElementById('hasilBody').innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="ti ti-database-off"></i><p>Belum ada data hasil perhitungan. Silakan tekan tombol <strong>Hitung Ulang</strong> untuk memulai.</p><button class="btn btn-primary btn-sm mt-3" onclick="hitungUlangTopsis()" style="background:var(--blue); border:none;">🚀 Hitung Rekomendasi</button></div></td></tr>`;
+          
+          // Clear chart
+          if (chartInstance) chartInstance.destroy();
+          return;
+        }
+
+        // Stats
+        document.getElementById('s_total').textContent = data.length;
+        document.getElementById('s_rank1').textContent = data[0].kode_saham;
+        document.getElementById('s_max').textContent = data[0].nilai_preferensi.toFixed(4);
+        document.getElementById('s_rekom').textContent = data.filter(d => d.nilai_preferensi >= 0.6).length + ' saham';
+
+        // Chart
+        renderChart(data);
+
+        // Table
+        const medals = ['🥇','🥈','🥉'];
+        let html = '';
+        data.forEach((item) => {
+          const val = item.nilai_preferensi;
+          const pct = (val * 100).toFixed(1);
+
+          const rankBadge = item.ranking <= 3
+            ? `<span style="font-size:20px;">${medals[item.ranking-1]}</span>`
+            : `<span class="badge-rank rn">${item.ranking}</span>`;
+
+          let status = '';
+          if (val >= 0.6)       status = `<span class="badge-status sangat"><i class="ti ti-star"></i> Sangat Direkomendasikan</span>`;
+          else if (val >= 0.4)  status = `<span class="badge-status direk"><i class="ti ti-thumb-up"></i> Direkomendasikan</span>`;
+          else                  status = `<span class="badge-status pertim"><i class="ti ti-minus"></i> Dipertimbangkan</span>`;
+
+          const barColor = val >= 0.6 ? '#16a34a' : val >= 0.4 ? '#2563eb' : '#94a3b8';
+
+          html += `<tr>
+            <td style="text-align:center;">${rankBadge}</td>
+            <td><span class="kode-pill">${item.kode_saham}</span></td>
+            <td style="font-weight:500;">${item.nama_perusahaan}</td>
+            <td style="font-family:'Sora',sans-serif; font-weight:700; font-size:16px;">${val.toFixed(4)}</td>
+            <td style="min-width:120px;">
+              <div style="background:#f1f5f9; border-radius:999px; height:8px;">
+                <div style="background:${barColor}; width:${pct}%; height:8px; border-radius:999px;"></div>
+              </div>
+              <div style="font-size:11px; color:var(--muted); margin-top:3px;">${pct}%</div>
+            </td>
+            <td>${status}</td>
+          </tr>`;
+        });
+        document.getElementById('hasilBody').innerHTML = html;
+      } catch(e) {
+        console.error(e);
+        document.getElementById('hasilBody').innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">Gagal memuat hasil.</td></tr>`;
+      }
+    }
+
+    async function hitungUlangTopsis() {
+      try {
+        const res = await fetch('http://localhost:3000/topsis/hitung', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: loggedUser.username })
+        });
+        const data = await res.json();
+        alert('Perhitungan TOPSIS berhasil diperbarui!');
+        loadHasil();
+      } catch (e) {
+        alert('Gagal memperbarui perhitungan');
+      }
+    }
+
+    function renderChart(data) {
+      if (chartInstance) chartInstance.destroy();
+      const sorted = [...data].sort((a,b) => b.nilai_preferensi - a.nilai_preferensi);
+      chartInstance = new Chart(document.getElementById('chartHasil'), {
+        type: 'bar',
+        data: {
+          labels: sorted.map(d => d.kode_saham),
+          datasets: [{
+            label: 'Nilai Preferensi',
+            data: sorted.map(d => parseFloat(d.nilai_preferensi.toFixed(4))),
+            backgroundColor: sorted.map(d =>
+              d.nilai_preferensi >= 0.6 ? '#16a34a' :
+              d.nilai_preferensi >= 0.4 ? '#2563eb' : '#94a3b8'
+            ),
+            borderRadius: 8,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 1, grid: { color: 'rgba(0,0,0,0.05)' }, title: { display: true, text: 'Nilai Preferensi' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    loadHasil();
+  </script>
+</body>
+</html>

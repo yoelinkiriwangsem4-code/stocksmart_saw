@@ -1,0 +1,179 @@
+/* =========================
+   BODY
+========================= */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background:
+        linear-gradient(135deg,
+            #0d6efd,
+            #0047b3);
+}
+
+/* =========================
+   AUTH PAGE
+========================= */
+.auth-body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* =========================
+   CONTAINER
+========================= */
+.auth-container {
+    width: 100%;
+    max-width: 1000px;
+    padding: 20px;
+}
+
+/* =========================
+   CARD
+========================= */
+.auth-card {
+    background: white;
+    border-radius: 25px;
+    overflow: hidden;
+    display: flex;
+    min-height: 600px;
+    box-shadow:
+        0 15px 40px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.5s ease;
+}
+
+/* =========================
+   LEFT SIDE
+========================= */
+.auth-left {
+    width: 50%;
+    background:
+        linear-gradient(135deg,
+            #0d6efd,
+            #003b99);
+
+    color: white;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+
+    padding: 40px;
+}
+
+.auth-left h1 {
+    font-size: 42px;
+    font-weight: bold;
+}
+
+.auth-left p {
+    font-size: 18px;
+    line-height: 1.8;
+    opacity: 0.9;
+}
+
+/* =========================
+   REGISTER LEFT
+========================= */
+.register-left {
+    background:
+        linear-gradient(135deg,
+            #198754,
+            #0f5132);
+}
+
+/* =========================
+   RIGHT SIDE
+========================= */
+.auth-right {
+    width: 50%;
+    padding: 60px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* =========================
+   INPUT
+========================= */
+.form-control {
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    transition: 0.3s;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow:
+        0 0 0 0.2rem rgba(13, 110, 253, 0.2);
+}
+
+/* =========================
+   BUTTON
+========================= */
+.auth-btn {
+    border-radius: 12px;
+    padding: 12px;
+    font-weight: bold;
+    font-size: 16px;
+    transition: 0.3s;
+}
+
+.auth-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* =========================
+   LINK
+========================= */
+.auth-link {
+    text-decoration: none;
+    font-weight: 600;
+    color: #0d6efd;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+}
+
+/* =========================
+   ANIMATION
+========================= */
+@keyframes fadeIn {
+
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+
+    .auth-card {
+        flex-direction: column;
+    }
+
+    .auth-left,
+    .auth-right {
+        width: 100%;
+    }
+
+    .auth-left {
+        min-height: 250px;
+    }
+
+}
