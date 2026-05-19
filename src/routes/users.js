@@ -70,14 +70,14 @@ router.post("/register", async (req, res) => {
 
     catch (error) {
 
-        console.log(error);
+        console.error("Error saat register:", error);
 
         res.json({
 
             success: false,
 
             message:
-                "Server error"
+                "Server error: " + error.message
 
         });
 
@@ -168,14 +168,14 @@ router.post("/login", async (req, res) => {
 
     catch (error) {
 
-        console.log(error);
+        console.error("Error saat login:", error);
 
         res.json({
 
             success: false,
 
             message:
-                "Server error"
+                "Server error: " + error.message
 
         });
 
