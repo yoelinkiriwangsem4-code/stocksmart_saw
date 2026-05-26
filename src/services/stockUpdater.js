@@ -15,7 +15,9 @@ async function updateStocks() {
       
       try {
         // Fetch data
+        //Kita mengambil harga terkini
         const quote = await yahooFinance.quote(ticker).catch(() => null);
+        //Kita Mengambil data fundamental
         const quoteSummary = await yahooFinance.quoteSummary(ticker, {
             modules: ['defaultKeyStatistics', 'financialData']
         }).catch(() => null);
