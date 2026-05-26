@@ -52,7 +52,7 @@
       <a href="/users/dashboard.html" class="nav-item"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></a>
       <a href="/saham-list.html" class="nav-item"><i class="ti ti-building-bank"></i><span>Daftar Saham</span></a>
       <a href="/users/analisis.html" class="nav-item"><i class="ti ti-calculator"></i><span>Input Analisis</span></a>
-      <a href="/users/hasil.html" class="nav-item"><i class="ti ti-trophy"></i><span>Hasil TOPSIS</span></a>
+      <a href="/users/hasil.html" class="nav-item"><i class="ti ti-trophy"></i><span>Hasil SAW</span></a>
       <a href="/users/rekomendasi.html" class="nav-item active"><i class="ti ti-stars"></i><span>Rekomendasi</span></a>
       <a href="/users/prediksi.html" class="nav-item"><i class="ti ti-chart-line"></i><span>Prediksi Trend</span></a>
     </nav>
@@ -74,7 +74,7 @@
 
       <div>
         <h2 style="font-family:'Sora',sans-serif; font-size:20px; font-weight:700;">Rekomendasi Saham</h2>
-        <p style="color:var(--muted); font-size:14px; margin-top:2px;">Saham terbaik berdasarkan analisis TOPSIS — tampilkan data lengkap per saham</p>
+        <p style="color:var(--muted); font-size:14px; margin-top:2px;">Saham terbaik berdasarkan analisis SAW — tampilkan data lengkap per saham</p>
       </div>
 
       <!-- FILTER TABS -->
@@ -100,7 +100,7 @@
       <!-- WINNER BANNER (shown only if data) -->
       <div id="winnerBanner" style="display:none;" class="hero-banner" style="position:relative;">
         <div>
-          <div style="font-size:13px; opacity:0.8; margin-bottom:4px; font-weight:500;">🏆 Saham Terbaik Pilihan TOPSIS</div>
+          <div style="font-size:13px; opacity:0.8; margin-bottom:4px; font-weight:500;">🏆 Saham Terbaik Pilihan SAW</div>
           <h1 id="winnerKode" style="font-size:32px;"></h1>
           <p id="winnerNama" style="opacity:0.8;"></p>
           <div style="margin-top:12px; display:flex; gap:24px;">
@@ -154,7 +154,7 @@
         </div>
       </div>
 
-      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode TOPSIS</div>
+      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode SAW</div>
     </div>
   </main>
 
@@ -177,17 +177,17 @@
 
     async function loadRekomendasi() {
       try {
-        const [topsisRes, sahamRes] = await Promise.all([
-          fetch('/topsis/saved?username=' + loggedUser.username),
+        const [sawRes, sahamRes] = await Promise.all([
+          fetch('/saw/saved?username=' + loggedUser.username),
           fetch('/saham?username=' + loggedUser.username)
         ]);
-        allData = await topsisRes.json();
+        allData = await sawRes.json();
         const saham = await sahamRes.json();
         saham.forEach(s => sahamData[s.clean_kode || s.kode_saham] = s);
 
         if (!allData.length) {
           document.getElementById('winnerBanner').style.display = 'none';
-          document.getElementById('rekomendasiGrid').innerHTML = `<div style="grid-column:1/-1;"><div class="empty-state"><i class="ti ti-stars" style="font-size:32px; color:var(--blue);"></i><p style="margin: 8px 0 12px 0;">Belum ada hasil perhitungan TOPSIS</p><button class="btn btn-primary btn-sm" onclick="hitungRekomendasi()" style="background:var(--blue); border:none;">🚀 Hitung Sekarang</button></div></div>`;
+          document.getElementById('rekomendasiGrid').innerHTML = `<div style="grid-column:1/-1;"><div class="empty-state"><i class="ti ti-stars" style="font-size:32px; color:var(--blue);"></i><p style="margin: 8px 0 12px 0;">Belum ada hasil perhitungan SAW</p><button class="btn btn-primary btn-sm" onclick="hitungRekomendasi()" style="background:var(--blue); border:none;">🚀 Hitung Sekarang</button></div></div>`;
           document.getElementById('detailBody').innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px;">Belum ada data untuk ditampilkan</td></tr>`;
           document.getElementById('countLabel').textContent = '0 saham ditemukan';
           return;
@@ -210,16 +210,16 @@
 
     async function hitungRekomendasi() {
       try {
-        const res = await fetch('/topsis/hitung', {
+        const res = await fetch('/saw/hitung', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: loggedUser.username })
         });
         const data = await res.json();
-        alert('Perhitungan TOPSIS berhasil disimpan!');
+        alert('Perhitungan SAW berhasil disimpan!');
         loadRekomendasi();
       } catch (e) {
-        alert('Gagal menghitung TOPSIS');
+        alert('Gagal menghitung SAW');
       }
     }
 

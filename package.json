@@ -18,6 +18,8 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
-    "prisma": "^5.22.0"
+    "node-cron": "^4.2.1",
+    "prisma": "^5.22.0",
+    "yahoo-finance2": "^3.14.1"
   }
 }

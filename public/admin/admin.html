@@ -241,12 +241,16 @@
             ? `<button class="btn-warning-spk" onclick="viewUserCalculations('${user.username}')" style="background:var(--blue); color:#fff; border:none; padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600;"><i class="ti ti-eye"></i> Lihat Hasil</button>`
             : `<button class="btn-warning-spk" disabled style="background:#f1f5f9; color:#94a3b8; border:none; padding:5px 12px; border-radius:6px; font-size:12px; cursor:not-allowed;"><i class="ti ti-eye-off"></i> Kosong</button>`;
 
+          const deleteBtn = user.username !== 'admin' 
+            ? `<button class="btn-danger-spk" onclick="hapusUser('${user.username}')" style="margin-left:5px; padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600;"><i class="ti ti-trash"></i> Hapus</button>`
+            : '';
+
           html += `
             <tr>
               <td style="font-family:'Sora',sans-serif; font-weight:600;">${user.username}</td>
               <td>${roleBadge}</td>
               <td>${calcStatus}</td>
-              <td style="text-align:center;">${actionBtn}</td>
+              <td style="text-align:center; white-space:nowrap;">${actionBtn}${deleteBtn}</td>
             </tr>`;
         });
         document.getElementById('userTableBody').innerHTML = html;
@@ -302,6 +306,22 @@
       });
       document.getElementById('detailTableBody').innerHTML = html;
       document.getElementById('detailsPanel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function hapusUser(username) {
+      if (!confirm(`Yakin ingin menghapus user "${username}" beserta semua saham dan data perhitungannya?`)) return;
+      try {
+        const res = await fetch(`/users/${username}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          alert(data.message);
+          loadAdminData();
+        } else {
+          alert('Gagal: ' + data.message);
+        }
+      } catch(e) {
+        alert('Terjadi kesalahan saat menghapus user.');
+      }
     }
 
     loadAdminData();

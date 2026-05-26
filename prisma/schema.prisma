@@ -1,10 +1,10 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model users {
@@ -27,9 +27,11 @@ model saham {
   eps_growth      Float
   sektor          String      @default("Perbankan")
   username        String?
-  users           users?      @relation(fields: [username], references: [username])
   hasil           hasil[]
   penilaian       penilaian[]
+  users           users?      @relation(fields: [username], references: [username])
+
+  @@index([username], map: "saham_username_fkey")
 }
 
 model kriteria {
@@ -46,8 +48,11 @@ model penilaian {
   kode_saham     String
   kode_kriteria  String
   nilai          Float
-  saham          saham    @relation(fields: [kode_saham], references: [kode_saham])
   kriteria       kriteria @relation(fields: [kode_kriteria], references: [kode_kriteria])
+  saham          saham    @relation(fields: [kode_saham], references: [kode_saham])
+
+  @@index([kode_kriteria], map: "penilaian_kode_kriteria_fkey")
+  @@index([kode_saham], map: "penilaian_kode_saham_fkey")
 }
 
 model hasil {
@@ -56,16 +61,20 @@ model hasil {
   kode_saham       String
   nilai_preferensi Float
   ranking          Int
-  users            users  @relation(fields: [username], references: [username])
   saham            saham  @relation(fields: [kode_saham], references: [kode_saham])
+  users            users  @relation(fields: [username], references: [username])
+
+  @@index([kode_saham], map: "hasil_kode_saham_fkey")
+  @@index([username], map: "hasil_username_fkey")
 }
 
 model user_kriteria {
   username      String
   kode_kriteria String
   bobot         Float
-  users         users    @relation(fields: [username], references: [username])
   kriteria      kriteria @relation(fields: [kode_kriteria], references: [kode_kriteria])
+  users         users    @relation(fields: [username], references: [username])
 
   @@id([username, kode_kriteria])
+  @@index([kode_kriteria], map: "user_kriteria_kode_kriteria_fkey")
 }

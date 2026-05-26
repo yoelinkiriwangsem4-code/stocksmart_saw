@@ -3,19 +3,38 @@ const router = express.Router();
 const prisma = require("../prisma");
 
 // ======================================
+// SYNC ALL STOCKS FROM YAHOO FINANCE
+// ======================================
+router.post("/sync", async (req, res) => {
+  try {
+    const { updateStocks } = require("../services/stockUpdater");
+    await updateStocks();
+    res.json({ success: true, message: "Sinkronisasi data saham berhasil!" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Gagal memuat data sinkronisasi", error: error.message });
+  }
+});
+
+// ======================================
 // GET ALL STOCKS (Default & Custom User)
 // ======================================
 router.get("/", async (req, res) => {
   try {
-    const { username } = req.query;
+    const { username, role } = req.query;
 
-    const data = await prisma.saham.findMany({
-      where: {
+    let whereClause = {};
+    if (role !== 'admin') {
+      whereClause = {
         OR: [
           { username: null },
-          username ? { username: username } : { username: "___NONE___" } // Avoid loading random custom stocks if not logged in
+          username ? { username: username } : { username: "___NONE___" }
         ]
-      }
+      };
+    }
+
+    const data = await prisma.saham.findMany({
+      where: whereClause
     });
 
     // Add clean_kode by stripping username suffix if present
@@ -104,7 +123,7 @@ router.put("/:kode_saham", async (req, res) => {
     const { nama_perusahaan, harga, per, pbv, roe, der, eps_growth, sektor } = req.body;
 
     const data = await prisma.saham.update({
-      where: { kode_saham: kode_saham.toUpperCase() },
+      where: { kode_saham: kode_saham },
       data: {
         nama_perusahaan,
         harga: parseInt(harga) || 0,
@@ -133,15 +152,15 @@ router.delete("/:kode_saham", async (req, res) => {
 
     // Hapus relasi penilaian dan hasil terlebih dahulu untuk mencegah foreign key error
     await prisma.penilaian.deleteMany({
-      where: { kode_saham: kode_saham.toUpperCase() }
+      where: { kode_saham: kode_saham }
     });
 
     await prisma.hasil.deleteMany({
-      where: { kode_saham: kode_saham.toUpperCase() }
+      where: { kode_saham: kode_saham }
     });
 
     await prisma.saham.delete({
-      where: { kode_saham: kode_saham.toUpperCase() }
+      where: { kode_saham: kode_saham }
     });
 
     res.json({ success: true, message: "Data saham berhasil dihapus" });

@@ -146,7 +146,7 @@
       <a href="/users/dashboard.html" class="nav-item"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></a>
       <a href="/saham-list.html" class="nav-item"><i class="ti ti-building-bank"></i><span>Daftar Saham</span></a>
       <a href="/users/analisis.html" class="nav-item active"><i class="ti ti-calculator"></i><span>Perbandingan Saham</span></a>
-      <a href="/users/hasil.html" class="nav-item"><i class="ti ti-trophy"></i><span>Hasil TOPSIS</span></a>
+      <a href="/users/hasil.html" class="nav-item"><i class="ti ti-trophy"></i><span>Hasil SAW</span></a>
       <a href="/users/rekomendasi.html" class="nav-item"><i class="ti ti-stars"></i><span>Rekomendasi</span></a>
       <a href="/users/prediksi.html" class="nav-item"><i class="ti ti-chart-line"></i><span>Prediksi Trend</span></a>
     </nav>
@@ -194,9 +194,14 @@
           <div class="panel-header" style="padding:18px 22px; margin-bottom:0; border-radius:14px 14px 0 0; display:flex; align-items:center;">
             <i class="ti ti-checkbox" style="color:var(--blue);"></i>
             Pilih Saham untuk Dibandingkan
-            <button class="btn-primary-spk" onclick="openAddModal()" style="margin-left:auto; padding:6px 12px; font-size:12px;">
-              <i class="ti ti-plus"></i> Tambah Saham Kustom
-            </button>
+            <div style="margin-left:auto; display:flex; gap:8px;">
+              <button class="btn-secondary-spk" onclick="syncSaham()" id="btnSync" style="padding:6px 12px; font-size:12px; background:#fff;">
+                <i class="ti ti-refresh"></i> Sync Data
+              </button>
+              <button class="btn-primary-spk" onclick="openAddModal()" style="padding:6px 12px; font-size:12px;">
+                <i class="ti ti-plus"></i> Tambah Saham Kustom
+              </button>
+            </div>
           </div>
           
           <div class="table-wrap">
@@ -294,13 +299,13 @@
           </div>
 
           <div id="bobotWarning" style="display:none; margin-top:12px; padding:10px 14px; background:#fef3c7; border-radius:8px; border:1px solid #fde68a; color:#b45309; font-size:12px;">
-            <i class="ti ti-alert-triangle"></i> Total bobot saat ini tidak sama dengan 1.0 (100%). Perhitungan TOPSIS akan tetap menormalisasi secara proporsional.
+            <i class="ti ti-alert-triangle"></i> Total bobot saat ini tidak sama dengan 1.0 (100%). Perhitungan SAW akan tetap menormalisasi secara proporsional.
           </div>
 
           <!-- ACTION BUTTONS -->
           <div style="margin-top:24px; display:flex; flex-direction:column; gap:10px;">
-            <button class="btn-primary-spk" onclick="hitungTopsis()" style="width:100%; padding:14px; font-size:16px; font-weight:700; justify-content:center; border-radius:10px; box-shadow:0 4px 15px rgba(37,99,235,0.25);">
-              <i class="ti ti-bolt"></i> ⚡ Bandingkan & Hitung TOPSIS
+            <button class="btn-primary-spk" onclick="hitungSaw()" style="width:100%; padding:14px; font-size:16px; font-weight:700; justify-content:center; border-radius:10px; box-shadow:0 4px 15px rgba(37,99,235,0.25);">
+              <i class="ti ti-bolt"></i> ⚡ Bandingkan & Hitung SAW
             </button>
           </div>
 
@@ -308,7 +313,7 @@
 
       </div>
 
-      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode TOPSIS</div>
+      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode SAW</div>
     </div>
   </main>
 
@@ -482,6 +487,26 @@
       }
     }
 
+    async function syncSaham() {
+      const btn = document.getElementById('btnSync');
+      btn.innerHTML = `<i class="ti ti-loader-2 spin"></i> Syncing...`;
+      btn.disabled = true;
+      try {
+        const res = await fetch('/saham/sync', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          alert('Sinkronisasi data real-time berhasil!');
+          await loadSaham();
+        } else {
+          alert('Gagal menyinkronkan data.');
+        }
+      } catch(e) {
+        alert('Terjadi kesalahan saat sinkronisasi.');
+      }
+      btn.innerHTML = `<i class="ti ti-refresh"></i> Sync Data`;
+      btn.disabled = false;
+    }
+
     // SWITCH SECTOR TAB
     function switchSector(sector) {
       activeSector = sector;
@@ -499,6 +524,13 @@
     }
 
     // RENDER CHECKLIST TABLE
+    // Helper: format numbers to max 4 significant digits and 2 decimal places
+    function formatNumber(value) {
+      if (value === null || value === undefined) return '-';
+      const num = Number(value);
+      if (isNaN(num)) return value;
+      return num.toLocaleString('en-US', { maximumFractionDigits: 2, maximumSignificantDigits: 4 });
+    }
     function renderSaham() {
       let filtered = [];
       if (activeSector === 'Semua') {
@@ -535,11 +567,11 @@
               ${s.username ? `<span style="font-size:10px; background:#f0fdf4; color:#16a34a; padding:2px 6px; border-radius:4px; margin-left:4px; font-weight:600;">Kustom Anda</span>` : ''}
             </td>
             <td style="font-weight:600; color:var(--blue);">Rp ${s.harga ? s.harga.toLocaleString('id-ID') : '0'}</td>
-            <td>${s.per}</td>
-            <td>${s.pbv}</td>
-            <td>${s.roe}</td>
-            <td>${s.der}</td>
-            <td>${s.eps_growth}</td>
+            <td>${formatNumber(s.per)}</td>
+            <td>${formatNumber(s.pbv)}</td>
+            <td>${formatNumber(s.roe)}</td>
+            <td>${formatNumber(s.der)}</td>
+            <td>${formatNumber(s.eps_growth)}</td>
             <td style="text-align:center;">${deleteButton}</td>
           </tr>`;
       });
@@ -636,11 +668,11 @@
       }
     }
 
-    // 3. EXECUTE TOPSIS CALCULATION
-    async function hitungTopsis() {
+    // 3. EXECUTE SAW CALCULATION
+    async function hitungSaw() {
       const checkedBoxes = document.querySelectorAll('.stock-chk:checked');
       if (checkedBoxes.length < 2) {
-        alert('Silakan centang minimal 2 saham untuk perbandingan agar hasil TOPSIS valid!');
+        alert('Silakan centang minimal 2 saham untuk perbandingan agar hasil SAW valid!');
         return;
       }
 
@@ -656,7 +688,7 @@
       };
 
       try {
-        const res = await fetch('/topsis/hitung', {
+        const res = await fetch('/saw/hitung', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -671,7 +703,7 @@
           // Redirect to results page
           window.location.href = '/users/hasil.html';
         } else {
-          alert('Gagal memproses TOPSIS: ' + (data.message || 'Error'));
+          alert('Gagal memproses SAW: ' + (data.message || 'Error'));
         }
       } catch (e) {
         alert('Gagal terhubung ke server.');

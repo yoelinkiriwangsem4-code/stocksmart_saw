@@ -21,7 +21,7 @@
       <a href="/users/dashboard.html" class="nav-item"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></a>
       <a href="/saham-list.html" class="nav-item active"><i class="ti ti-building-bank"></i><span>Daftar Saham</span></a>
       <a href="/users/analisis.html" class="nav-item"><i class="ti ti-calculator"></i><span>Input Analisis</span></a>
-      <a href="/users/hasil.html" class="nav-item"><i class="ti ti-trophy"></i><span>Hasil TOPSIS</span></a>
+      <a href="/users/hasil.html" class="nav-item"><i class="ti ti-trophy"></i><span>Hasil SAW</span></a>
       <a href="/users/rekomendasi.html" class="nav-item"><i class="ti ti-stars"></i><span>Rekomendasi</span></a>
       <a href="/users/prediksi.html" class="nav-item"><i class="ti ti-chart-line"></i><span>Prediksi Trend</span></a>
     </nav>
@@ -39,6 +39,7 @@
       <div class="topbar-title">Daftar Saham</div>
       <div class="topbar-right">
         <span class="topbar-user" id="topbarUser"><i class="ti ti-user-circle"></i> Admin</span>
+        <button id="btnBackAdmin" class="btn-secondary-spk" style="margin-left:12px; display:none;" onclick="window.location.href='/admin/admin.html'">← Kembali ke Admin</button>
       </div>
     </header>
 
@@ -48,18 +49,35 @@
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
         <div>
           <h2 style="font-family:'Sora',sans-serif; font-size:20px; font-weight:700;">Daftar Saham</h2>
-          <p style="color:var(--muted); font-size:14px; margin-top:2px;">Kelola seluruh data saham yang digunakan dalam perhitungan TOPSIS</p>
+          <p style="color:var(--muted); font-size:14px; margin-top:2px;">Kelola seluruh data saham yang digunakan dalam perhitungan SAW</p>
         </div>
-        <button class="btn-primary-spk" onclick="showForm()">
-          <i class="ti ti-plus"></i> Tambah Saham
-        </button>
+        <div style="display:flex; gap:10px;">
+          <button class="btn-secondary-spk" onclick="syncSaham()" id="btnSync" style="background:#fff;">
+            <i class="ti ti-refresh"></i> Sinkronisasi Data Real-time
+          </button>
+          <button class="btn-primary-spk" onclick="showForm()">
+            <i class="ti ti-plus"></i> Tambah Saham
+          </button>
+        </div>
       </div>
 
-      <!-- SEARCH BAR -->
+      <!-- SEARCH AND FILTER BAR -->
       <div class="card-panel" style="padding:16px 20px;">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <i class="ti ti-search" style="color:var(--muted); font-size:18px;"></i>
-          <input type="text" id="searchInput" class="form-control" placeholder="Cari kode atau nama saham..." oninput="filterSaham()" style="border:none; outline:none; font-size:14px; padding:4px 0; flex:1;">
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:250px;">
+            <i class="ti ti-search" style="color:var(--muted); font-size:18px;"></i>
+            <input type="text" id="searchInput" class="form-control" placeholder="Cari kode atau nama saham..." oninput="filterSaham()" style="border:none; outline:none; font-size:14px; padding:4px 0; flex:1;">
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <i class="ti ti-filter" style="color:var(--muted); font-size:18px;"></i>
+            <select id="sectorFilter" class="form-select" onchange="filterSaham()" style="border:none; outline:none; font-size:14px; background:var(--bg); width:auto; font-weight:600;">
+              <option value="Semua">Semua Sektor</option>
+              <option value="Perbankan">Perbankan</option>
+              <option value="Teknologi">Teknologi</option>
+              <option value="Konsumer">Konsumer</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -146,7 +164,7 @@
       <div class="card-panel">
         <div class="panel-header">
           <i class="ti ti-info-circle"></i>
-          Keterangan Kriteria TOPSIS
+          Keterangan Kriteria SAW
         </div>
         <div class="row g-3">
           <div class="col-md-4">
@@ -182,7 +200,7 @@
         </div>
       </div>
 
-      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode TOPSIS</div>
+      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode SAW</div>
     </div>
   </main>
 
@@ -195,8 +213,15 @@
       document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('topbarUser').innerHTML = `<i class="ti ti-user-circle"></i> ${loggedUser.username} (${loggedUser.role === 'admin' ? 'Admin' : 'User'})`;
         
-        // RBAC: Hide CRUD if not admin
-        if (loggedUser.role !== 'admin') {
+        // RBAC: Show Admin Panel link & Hide CRUD if not admin
+        if (loggedUser.role === 'admin') {
+          const nav = document.querySelector('.sidebar-nav');
+          const adminLink = document.createElement('a');
+          adminLink.href = '/admin/admin.html';
+          adminLink.className = 'nav-item';
+          adminLink.innerHTML = '<i class="ti ti-shield-lock" style="color:var(--red);"></i><span style="font-weight:700;">Kembali ke Admin</span>';
+          nav.insertBefore(adminLink, nav.firstChild);
+        } else {
           const btnAdd = document.querySelector('.btn-primary-spk');
           if (btnAdd) btnAdd.style.display = 'none';
           
@@ -220,13 +245,45 @@
 
     async function loadSaham() {
       try {
-        const queryParam = loggedUser ? '?username=' + loggedUser.username : '';
+        let queryParam = '';
+        if (loggedUser) {
+          queryParam = `?username=${loggedUser.username}&role=${loggedUser.role}`;
+        }
         const res = await fetch(API_BASE + queryParam);
         allData = await res.json();
         renderTable(allData);
       } catch(e) {
         document.getElementById('tabelBody').innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:32px;">Gagal memuat data. Pastikan server berjalan.</td></tr>`;
       }
+    }
+
+    async function syncSaham() {
+      const btn = document.getElementById('btnSync');
+      btn.innerHTML = `<i class="ti ti-loader-2 spin"></i> Menyinkronkan...`;
+      btn.disabled = true;
+      try {
+        const res = await fetch(API_BASE + '/sync', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          alert('Sinkronisasi selesai! Data saham terbaru sudah diperbarui.');
+          loadSaham();
+        } else {
+          alert('Gagal menyinkronkan data: ' + (data.message || 'Error'));
+        }
+      } catch(e) {
+        alert('Terjadi kesalahan saat sinkronisasi.');
+      }
+      btn.innerHTML = `<i class="ti ti-refresh"></i> Sinkronisasi Data Real-time`;
+      btn.disabled = false;
+    }
+
+    // Helper: format numbers to max 4 significant digits and 2 decimal places
+    function formatNumber(value) {
+      if (value === null || value === undefined) return '-';
+      const num = Number(value);
+      if (isNaN(num)) return value;
+      // Use toLocaleString with limits: max 2 fraction digits, max 4 significant digits
+      return num.toLocaleString('en-US', { maximumFractionDigits: 2, maximumSignificantDigits: 4 });
     }
 
     function renderTable(data) {
@@ -247,18 +304,23 @@
               <i class="ti ti-trash"></i> Hapus
             </button>
           </td>` : '';
+        const ownerBadge = showAction 
+          ? (item.username 
+              ? `<br><small style="display:inline-block; margin-top:4px; background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase;"><i class="ti ti-user"></i> By: ${item.username}</small>` 
+              : `<br><small style="display:inline-block; margin-top:4px; background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase;"><i class="ti ti-world"></i> Global Default</small>`)
+          : '';
 
         html += `
           <tr>
             <td style="color:var(--muted); font-size:13px;">${i + 1}</td>
             <td><span class="kode-pill">${item.clean_kode || item.kode_saham}</span></td>
-            <td style="font-weight:500;">${item.nama_perusahaan}</td>
+            <td style="font-weight:500;">${item.nama_perusahaan} ${ownerBadge}</td>
             <td style="font-weight:600; color:var(--blue);">Rp ${item.harga ? item.harga.toLocaleString('id-ID') : '0'}</td>
-            <td>${item.per}</td>
-            <td>${item.pbv}</td>
-            <td>${item.roe}</td>
-            <td>${item.der}</td>
-            <td>${item.eps_growth}</td>
+            <td>${formatNumber(item.per)}</td>
+            <td>${formatNumber(item.pbv)}</td>
+            <td>${formatNumber(item.roe)}</td>
+            <td>${formatNumber(item.der)}</td>
+            <td>${formatNumber(item.eps_growth)}</td>
             ${actionCell}
           </tr>`;
       });
@@ -267,12 +329,16 @@
 
     function filterSaham() {
       const q = document.getElementById('searchInput').value.toLowerCase();
-      const filtered = allData.filter(d =>
-        d.kode_saham.toLowerCase().includes(q) ||
-        d.nama_perusahaan.toLowerCase().includes(q)
-      );
+      const sector = document.getElementById('sectorFilter').value;
+      
+      const filtered = allData.filter(d => {
+        const matchesQuery = d.kode_saham.toLowerCase().includes(q) || d.nama_perusahaan.toLowerCase().includes(q);
+        const matchesSector = sector === 'Semua' || d.sektor === sector;
+        return matchesQuery && matchesSector;
+      });
       renderTable(filtered);
     }
+
 
     function showForm() {
       editMode = false;

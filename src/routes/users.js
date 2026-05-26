@@ -188,21 +188,56 @@ router.post("/login", async (req, res) => {
 // ======================================
 router.get("/", async (req, res) => {
     try {
-        const data = await prisma.users.findMany({
+        const users = await prisma.users.findMany({
             select: {
                 username: true,
                 tipe_pengguna: true,
-                hasil: {
-                    include: {
-                        saham: true
-                    }
-                }
             }
         });
+        
+        const hasilList = await prisma.hasil.findMany({
+            include: { saham: true }
+        });
+
+        const data = users.map(user => {
+            return {
+                ...user,
+                hasil: hasilList.filter(h => h.username === user.username)
+            };
+        });
+
         res.json(data);
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: "Server error" });
+    }
+});
+
+// ======================================
+// DELETE USER (Khusus Admin)
+// ======================================
+router.delete("/:username", async (req, res) => {
+    try {
+        const { username } = req.params;
+        
+        // Cek admin terakhir
+        if (username === 'admin') {
+           return res.status(400).json({ success: false, message: "Tidak dapat menghapus super admin" });
+        }
+
+        // Hapus relasi yang bergantung pada user
+        await prisma.hasil.deleteMany({ where: { username } });
+        await prisma.penilaian.deleteMany({ where: { saham: { username } } });
+        await prisma.saham.deleteMany({ where: { username } });
+        await prisma.user_kriteria.deleteMany({ where: { username } });
+        
+        // Hapus user
+        await prisma.users.delete({ where: { username } });
+        
+        res.json({ success: true, message: "User berhasil dihapus beserta data miliknya" });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: "Gagal menghapus user", error: error.message });
     }
 });
 

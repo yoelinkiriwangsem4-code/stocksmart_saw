@@ -32,7 +32,7 @@
       </a>
       <a href="/users/hasil.html" class="nav-item">
         <i class="ti ti-trophy"></i>
-        <span>Hasil TOPSIS</span>
+        <span>Hasil SAW</span>
       </a>
       <a href="/users/rekomendasi.html" class="nav-item">
         <i class="ti ti-stars"></i>
@@ -72,7 +72,7 @@
       <div class="hero-banner">
         <div>
           <h1>Selamat Datang 👋</h1>
-          <p>Sistem Rekomendasi Saham <strong>TOPSIS</strong></p>
+          <p>Sistem Rekomendasi Saham <strong>SAW</strong></p>
         </div>
         <div class="hero-badge">
           <i class="ti ti-chart-candle"></i>
@@ -133,7 +133,7 @@
             </a>
             <a href="/users/hasil.html" class="quick-btn green">
               <i class="ti ti-trophy"></i>
-              <span>Lihat Hasil TOPSIS</span>
+              <span>Lihat Hasil SAW</span>
               <i class="ti ti-arrow-right chevron"></i>
             </a>
             <a href="/users/rekomendasi.html" class="quick-btn amber">
@@ -166,15 +166,15 @@
       <div class="card-panel">
         <div class="panel-header">
           <i class="ti ti-chart-bar"></i>
-          Grafik Nilai Preferensi TOPSIS
+          Grafik Nilai Preferensi SAW
         </div>
         <div style="position:relative; height:260px;">
-          <canvas id="chartPreferensi" role="img" aria-label="Grafik nilai preferensi TOPSIS seluruh saham">Grafik nilai preferensi TOPSIS.</canvas>
+          <canvas id="chartPreferensi" role="img" aria-label="Grafik nilai preferensi SAW seluruh saham">Grafik nilai preferensi SAW.</canvas>
         </div>
       </div>
 
       <!-- FOOTER -->
-      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode TOPSIS</div>
+      <div class="page-footer">© 2026 SPK Pemilihan Saham — Metode SAW</div>
 
     </div>
   </main>
@@ -188,6 +188,16 @@
       window.location.href = '/auth/login.html';
     } else {
       document.getElementById('topbarUser').innerHTML = `<i class="ti ti-user-circle"></i> ${loggedUser.username} (${loggedUser.role === 'admin' ? 'Admin' : 'User'})`;
+      
+      // Inject Admin Panel back link for admins
+      if (loggedUser.role === 'admin') {
+        const nav = document.querySelector('.sidebar-nav');
+        const adminLink = document.createElement('a');
+        adminLink.href = '/admin/admin.html';
+        adminLink.className = 'nav-item';
+        adminLink.innerHTML = '<i class="ti ti-shield-lock" style="color:var(--red);"></i><span style="font-weight:700;">Kembali ke Admin</span>';
+        nav.insertBefore(adminLink, nav.firstChild);
+      }
     }
 
     function logout() {
@@ -196,7 +206,7 @@
     }
 
     const API_SAHAM = '/saham?username=' + (loggedUser ? loggedUser.username : '');
-    const API_TOPSIS_SAVED = '/topsis/saved?username=' + (loggedUser ? loggedUser.username : '');
+    const API_SAW_SAVED = '/saw/saved?username=' + (loggedUser ? loggedUser.username : '');
 
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('collapsed');
@@ -204,19 +214,19 @@
 
     async function loadDashboard() {
       try {
-        const [sahamRes, topsisRes] = await Promise.all([
+        const [sahamRes, sawRes] = await Promise.all([
           fetch(API_SAHAM),
-          fetch(API_TOPSIS_SAVED)
+          fetch(API_SAW_SAVED)
         ]);
         const saham = await sahamRes.json();
-        const topsis = await topsisRes.json();
+        const saw = await sawRes.json();
 
         document.getElementById('totalSaham').textContent = saham.length;
 
-        if (topsis.length > 0) {
-          document.getElementById('sahamTerbaik').textContent = topsis[0].kode_saham;
-          document.getElementById('nilaiTertinggi').textContent = topsis[0].nilai_preferensi.toFixed(4);
-          const rekom = topsis.filter(t => t.nilai_preferensi >= 0.5).length;
+        if (saw.length > 0) {
+          document.getElementById('sahamTerbaik').textContent = saw[0].kode_saham;
+          document.getElementById('nilaiTertinggi').textContent = saw[0].nilai_preferensi.toFixed(4);
+          const rekom = saw.filter(t => t.nilai_preferensi >= 0.5).length;
           document.getElementById('countRekom').textContent = rekom + ' saham';
 
           // Map for stock price lookup
@@ -225,8 +235,8 @@
             sahamMap[s.kode_saham] = s;
           });
 
-          renderTop3(topsis.slice(0, 3), sahamMap);
-          renderChart(topsis);
+          renderTop3(saw.slice(0, 3), sahamMap);
+          renderChart(saw);
         } else {
           document.getElementById('sahamTerbaik').textContent = '—';
           document.getElementById('nilaiTertinggi').textContent = '—';
@@ -236,7 +246,7 @@
             <div class="empty-state">
               <i class="ti ti-stars" style="font-size:32px; color:var(--blue);"></i>
               <p style="margin: 8px 0 12px 0;">Belum ada hasil perhitungan tersimpan</p>
-              <button class="btn btn-primary btn-sm" onclick="hitungTopsis()" style="background:var(--blue); border:none; padding:6px 14px; border-radius:6px; font-weight:600; font-size:12px;">🚀 Hitung Sekarang</button>
+              <button class="btn btn-primary btn-sm" onclick="hitungSaw()" style="background:var(--blue); border:none; padding:6px 14px; border-radius:6px; font-weight:600; font-size:12px;">🚀 Hitung Sekarang</button>
             </div>
           `;
           
@@ -254,18 +264,18 @@
       }
     }
 
-    async function hitungTopsis() {
+    async function hitungSaw() {
       try {
-        const res = await fetch('/topsis/hitung', {
+        const res = await fetch('/saw/hitung', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: loggedUser.username })
         });
         const data = await res.json();
-        alert('Perhitungan TOPSIS berhasil dijalankan dan disimpan!');
+        alert('Perhitungan SAW berhasil dijalankan dan disimpan!');
         loadDashboard();
       } catch (e) {
-        alert('Gagal menghitung TOPSIS');
+        alert('Gagal menghitung SAW');
       }
     }
 
