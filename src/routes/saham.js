@@ -175,7 +175,8 @@ router.delete("/:kode_saham", async (req, res) => {
 // ======================================
 router.get("/historical/:kode", async (req, res) => {
   try {
-    const yahooFinance = require('yahoo-finance2').default;
+    const YahooFinance = require('yahoo-finance2').default;
+    const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
     const kode = req.params.kode.split('_')[0]; // clean user suffix
     const tahun = parseInt(req.query.tahun) || 5;
     const ticker = `${kode}.JK`;
