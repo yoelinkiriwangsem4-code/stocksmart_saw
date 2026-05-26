@@ -126,12 +126,21 @@
           
           <!-- CONTROLLER BAR -->
           <div class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label" style="font-weight:600; font-size:12px; color:var(--text);">Pilih Saham</label>
               <select id="sahamSelector" class="form-select" onchange="runSimulation()" style="border-radius:10px;"></select>
             </div>
             
-            <div class="col-md-4">
+            <div class="col-md-3">
+              <label class="form-label" style="font-weight:600; font-size:12px; color:var(--text);">Data Historis</label>
+              <select id="historisSelector" class="form-select" onchange="runSimulation()" style="border-radius:10px;">
+                <option value="1">1 Tahun Terakhir</option>
+                <option value="3" selected>3 Tahun Terakhir</option>
+                <option value="5">5 Tahun Terakhir</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
               <label class="form-label" style="font-weight:600; font-size:12px; color:var(--text);">Jangka Proyeksi</label>
               <select id="tahunSelector" class="form-select" onchange="runSimulation()" style="border-radius:10px;">
                 <option value="3">3 Tahun Ke Depan</option>
@@ -140,7 +149,7 @@
               </select>
             </div>
 
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label" style="font-weight:600; font-size:12px; color:var(--text);">Optimisme Pasar</label>
               <select id="marketSelector" class="form-select" onchange="runSimulation()" style="border-radius:10px;">
                 <option value="pesimis">Pesimistis (Kondisi Berat)</option>
@@ -295,16 +304,18 @@
       }
     }
 
-    // RUN TRAJECTORY SIMULATION
-    function runSimulation() {
+    // RUN TRAJECTORY SIMULATION (with real historical data)
+    async function runSimulation() {
       const kode = document.getElementById('sahamSelector').value;
       if (!kode) return;
 
       const stock = allSaham.find(s => s.kode_saham === kode);
       if (!stock) return;
 
+      const cleanKode = stock.clean_kode || stock.kode_saham.split('_')[0];
       const N = parseInt(document.getElementById('tahunSelector').value) || 5;
-      const marketState = document.getElementById('marketSelector').value; // pesimis, netral, optimis
+      const histYears = parseInt(document.getElementById('historisSelector').value) || 3;
+      const marketState = document.getElementById('marketSelector').value;
 
       // Render spec cards
       document.getElementById('specPER').textContent = stock.per.toFixed(2);
@@ -313,73 +324,91 @@
       document.getElementById('specDER').textContent = stock.der.toFixed(2);
       document.getElementById('specEPS').textContent = stock.eps_growth.toFixed(1) + '%';
 
-      // 1. Calculate growth & risk factors
-      // Growth factor = (ROE * 0.6) + (EPS_Growth * 0.4)
+      // =============================================
+      // A. FETCH REAL HISTORICAL DATA FROM YAHOO FINANCE
+      // =============================================
+      let histLabels = [];
+      let histPrices = [];
+      try {
+        const res = await fetch(`/saham/historical/${cleanKode}?tahun=${histYears}`);
+        const histData = await res.json();
+        if (Array.isArray(histData) && histData.length > 0) {
+          histLabels = histData.map(d => {
+            const dt = new Date(d.tanggal);
+            return dt.toLocaleDateString('id-ID', { year: 'numeric', month: 'short' });
+          });
+          histPrices = histData.map(d => Math.round(d.close));
+        }
+      } catch (e) {
+        console.warn('Gagal mengambil data historis:', e);
+      }
+
+      // =============================================
+      // B. CALCULATE PROJECTION (same formula as before)
+      // =============================================
       const growthFactor = (stock.roe * 0.6) + (stock.eps_growth * 0.4);
-      // Risk factor = (DER * 0.15) + (PER * 0.01)
       const riskFactor = (stock.der * 0.15) + (stock.per * 0.01);
 
-      // 2. Net growth rate projection
-      let baseGrowthRate = (growthFactor - (riskFactor * 1.5)) / 100; // in decimals
-      
-      // Adjust with market multiplier
+      let baseGrowthRate = (growthFactor - (riskFactor * 1.5)) / 100;
       let marketMultiplier = 1.0;
       if (marketState === 'optimis') marketMultiplier = 1.4;
       if (marketState === 'pesimis') marketMultiplier = 0.6;
-      
-      let finalGrowthRate = baseGrowthRate * marketMultiplier;
-
-      // Clamp growth rate between -25% and +35% to keep it realistic
-      finalGrowthRate = Math.max(-0.25, Math.min(0.35, finalGrowthRate));
-
-      // Volatility scale based on risk factor
+      let finalGrowthRate = Math.max(-0.25, Math.min(0.35, baseGrowthRate * marketMultiplier));
       const volatility = Math.min(0.18, Math.max(0.02, riskFactor * 0.05));
 
-      // 3. Generate simulation trajectory data (Monte Carlo Simulation random walk)
-      const startPrice = stock.harga || 1000;
-      const labels = ['Tahun 0'];
-      const dataPoints = [startPrice]; 
+      // Start projection from last historical price (or current harga)
+      const startPrice = (histPrices.length > 0) ? histPrices[histPrices.length - 1] : (stock.harga || 1000);
 
-      // Seed-based random walk to keep trajectories consistent on recalculation but still look organic
+      const projLabels = [];
+      const projPrices = [];
       let currentVal = startPrice;
+      const currentYear = new Date().getFullYear();
+
       for (let t = 1; t <= N; t++) {
-        labels.push(`Tahun ${t}`);
-        
-        // CAGR component
+        projLabels.push(`${currentYear + t} (P)`);
         const cagrStep = currentVal * finalGrowthRate;
-        
-        // Volatility/Random Walk component
-        // Pseudo-random number generated deterministically based on stock code characters
         const charSum = stock.kode_saham.charCodeAt((t - 1) % stock.kode_saham.length);
-        const randFloat = ((Math.sin(t * charSum) + 1) / 2) - 0.5; // range [-0.5, 0.5]
-        const randomStep = currentVal * volatility * randFloat * 2; // range [-volatility, +volatility]
-
-        currentVal = currentVal + cagrStep + randomStep;
-        if (currentVal < 5) currentVal = 5; // Floor price value
-
-        dataPoints.push(Math.round(currentVal));
+        const randFloat = ((Math.sin(t * charSum) + 1) / 2) - 0.5;
+        const randomStep = currentVal * volatility * randFloat * 2;
+        currentVal = Math.max(5, currentVal + cagrStep + randomStep);
+        projPrices.push(Math.round(currentVal));
       }
 
-      // Update Key Figures
-      const endVal = dataPoints[dataPoints.length - 1];
-      const growthPercent = ((endVal - startPrice) / startPrice) * 100;
+      // =============================================
+      // C. COMBINE LABELS & BUILD CHART DATASETS
+      // =============================================
+      const allLabels = [...histLabels, ...projLabels];
+      const histLen = histLabels.length;
 
-      document.getElementById('valHargaAwal').textContent = 'Rp ' + startPrice.toLocaleString('id-ID');
+      // Historical dataset: real data, then nulls for projection period
+      const histDataset = [...histPrices, ...Array(projLabels.length).fill(null)];
+      // Projection dataset: nulls for historical, bridge from last hist price, then projected
+      const projDataset = [...Array(Math.max(0, histLen - 1)).fill(null), ...(histLen > 0 ? [histPrices[histPrices.length - 1]] : []), ...projPrices];
+
+      // =============================================
+      // D. UPDATE KEY FIGURES
+      // =============================================
+      const origPrice = (histPrices.length > 0) ? histPrices[0] : (stock.harga || 1000);
+      const endVal = projPrices[projPrices.length - 1] || startPrice;
+      const growthPercent = ((endVal - origPrice) / origPrice) * 100;
+
+      document.getElementById('valHargaAwal').textContent = 'Rp ' + origPrice.toLocaleString('id-ID');
       document.getElementById('valProyeksiAkhir').textContent = 'Rp ' + endVal.toLocaleString('id-ID');
-      
+
       const growthLabel = document.getElementById('valTotalGrowth');
       growthLabel.textContent = (growthPercent >= 0 ? '+' : '') + growthPercent.toFixed(1) + '%';
       growthLabel.style.color = growthPercent >= 0 ? 'var(--green)' : 'var(--red)';
 
       const riskLabel = document.getElementById('valRiskRating');
-      let riskName = 'Rendah';
-      let riskColor = 'var(--green)';
+      let riskName = 'Rendah'; let riskColor = 'var(--green)';
       if (riskFactor > 0.8) { riskName = 'Sedang'; riskColor = 'var(--purple)'; }
       if (riskFactor > 2.0) { riskName = 'Tinggi'; riskColor = 'var(--red)'; }
       riskLabel.textContent = riskName;
       riskLabel.style.color = riskColor;
 
-      // 4. Update Recommendation Panel
+      // =============================================
+      // E. RECOMMENDATION PANEL
+      // =============================================
       const trendIndicator = document.getElementById('trendIndicator');
       const actionLabel = document.getElementById('actionLabel');
       const trendDesc = document.getElementById('trendDesc');
@@ -388,65 +417,92 @@
       if (growthPercent > 20) {
         trendIndicator.className = 'indicator-pill bullish';
         trendIndicator.innerHTML = `<i class="ti ti-trending-up"></i> Bullish (Naik Kuat)`;
-        actionLabel.textContent = 'BUY';
-        actionLabel.style.color = 'var(--green)';
-        trendDesc.textContent = `Proyeksi fundamental sangat solid dengan pertumbuhan EPS sebesar ${stock.eps_growth.toFixed(1)}% dan efisiensi ROE ${stock.roe.toFixed(1)}% yang mampu mendorong kenaikan performa indeks sebesar ${growthPercent.toFixed(1)}% dalam ${N} tahun.`;
+        actionLabel.textContent = 'BUY'; actionLabel.style.color = 'var(--green)';
+        trendDesc.textContent = `Berdasarkan data historis ${histYears} tahun dan proyeksi ${N} tahun ke depan, saham ini menunjukkan pertumbuhan solid sebesar ${growthPercent.toFixed(1)}% dengan EPS Growth ${stock.eps_growth.toFixed(1)}% dan ROE ${stock.roe.toFixed(1)}%.`;
       } else if (growthPercent >= -5) {
         trendIndicator.className = 'indicator-pill sideways';
         trendIndicator.innerHTML = `<i class="ti ti-arrow-right"></i> Sideways (Stabil)`;
-        actionLabel.textContent = 'HOLD';
-        actionLabel.style.color = 'var(--purple)';
-        trendDesc.textContent = `Kinerja saham cenderung stabil dan defensif. Pertumbuhan berjalan moderat dengan prospek return index sekitar ${growthPercent.toFixed(1)}% jangka menengah. Layak untuk dipertahankan.`;
+        actionLabel.textContent = 'HOLD'; actionLabel.style.color = 'var(--purple)';
+        trendDesc.textContent = `Data historis ${histYears} tahun menunjukkan pergerakan stabil. Proyeksi ${N} tahun ke depan mengindikasikan return moderat sekitar ${growthPercent.toFixed(1)}%. Layak dipertahankan.`;
       } else {
         trendIndicator.className = 'indicator-pill bearish';
         trendIndicator.innerHTML = `<i class="ti ti-trending-down"></i> Bearish (Tren Turun)`;
-        actionLabel.textContent = 'SELL';
-        actionLabel.style.color = 'var(--red)';
-        trendDesc.textContent = `Kinerja fundamental terbebani oleh tingginya rasio hutang/harga dibandingkan dengan laju pertumbuhan yang lambat, berpotensi memicu koreksi akumulasi indeks hingga ${Math.abs(growthPercent).toFixed(1)}%.`;
+        actionLabel.textContent = 'SELL'; actionLabel.style.color = 'var(--red)';
+        trendDesc.textContent = `Data historis ${histYears} tahun dan proyeksi ${N} tahun ke depan menunjukkan potensi koreksi hingga ${Math.abs(growthPercent).toFixed(1)}% akibat beban rasio hutang dan valuasi tinggi.`;
       }
 
-      riskDesc.textContent = `Rasio Hutang terhadap Modal (DER) sebesar ${stock.der.toFixed(2)}x dan valuasi PER ${stock.per.toFixed(1)}x mengindikasikan tingkat sensitivitas fluktuasi indeks ${riskName.toLowerCase()} terhadap dinamika sentimen pasar.`;
+      riskDesc.textContent = `DER ${stock.der.toFixed(2)}x dan PER ${stock.per.toFixed(1)}x mengindikasikan sensitivitas fluktuasi ${riskName.toLowerCase()} terhadap sentimen pasar.`;
 
-      // 5. Draw Glowing Gradient Chart
+      // =============================================
+      // F. DRAW DUAL-LINE CHART (Historical + Projection)
+      // =============================================
       const ctx = document.getElementById('predictionChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, 340);
-      gradient.addColorStop(0, 'rgba(37, 99, 235, 0.25)');
-      gradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
+      const gradientHist = ctx.createLinearGradient(0, 0, 0, 340);
+      gradientHist.addColorStop(0, 'rgba(37, 99, 235, 0.18)');
+      gradientHist.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
+
+      const gradientProj = ctx.createLinearGradient(0, 0, 0, 340);
+      gradientProj.addColorStop(0, 'rgba(16, 185, 129, 0.18)');
+      gradientProj.addColorStop(1, 'rgba(16, 185, 129, 0.00)');
 
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: labels,
-          datasets: [{
-            label: `Simulasi Harga ${stock.clean_kode || stock.kode_saham}`,
-            data: dataPoints,
-            borderColor: '#2563eb',
-            borderWidth: 3,
-            fill: true,
-            backgroundColor: gradient,
-            tension: 0.35,
-            pointBackgroundColor: '#2563eb',
-            pointBorderColor: '#fff',
-            pointRadius: 4,
-            pointHoverRadius: 6
-          }]
+          labels: allLabels,
+          datasets: [
+            {
+              label: `Harga Historis (Yahoo Finance)`,
+              data: histDataset,
+              borderColor: '#2563eb',
+              borderWidth: 2.5,
+              fill: true,
+              backgroundColor: gradientHist,
+              tension: 0.35,
+              pointBackgroundColor: '#2563eb',
+              pointBorderColor: '#fff',
+              pointRadius: 3,
+              pointHoverRadius: 5,
+              spanGaps: false
+            },
+            {
+              label: `Proyeksi ${N} Tahun (Simulasi)`,
+              data: projDataset,
+              borderColor: '#10b981',
+              borderWidth: 2.5,
+              borderDash: [8, 4],
+              fill: true,
+              backgroundColor: gradientProj,
+              tension: 0.35,
+              pointBackgroundColor: '#10b981',
+              pointBorderColor: '#fff',
+              pointRadius: 3,
+              pointHoverRadius: 5,
+              spanGaps: false
+            }
+          ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false }
+            legend: {
+              display: true,
+              position: 'top',
+              labels: { font: { family: 'DM Sans', size: 12 }, usePointStyle: true, padding: 16 }
+            }
           },
           scales: {
             y: {
               grid: { color: '#f1f5f9' },
-              ticks: { font: { family: 'DM Sans', size: 11 }, color: '#64748b' }
+              ticks: { font: { family: 'DM Sans', size: 11 }, color: '#64748b',
+                callback: function(v) { return 'Rp ' + v.toLocaleString('id-ID'); }
+              }
             },
             x: {
               grid: { display: false },
-              ticks: { font: { family: 'DM Sans', size: 11, weight: 'bold' }, color: '#64748b' }
+              ticks: { font: { family: 'DM Sans', size: 10 }, color: '#64748b', maxRotation: 45 }
             }
           }
         }

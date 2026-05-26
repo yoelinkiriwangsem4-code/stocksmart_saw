@@ -19,12 +19,12 @@ model users {
 model saham {
   kode_saham      String      @id
   nama_perusahaan String
-  harga           Int         @default(0)
-  per             Float
-  pbv             Float
-  roe             Float
   der             Float
   eps_growth      Float
+  pbv             Float
+  per             Float
+  roe             Float
+  harga           Int         @default(0)
   sektor          String      @default("Perbankan")
   username        String?
   hasil           hasil[]
@@ -44,25 +44,25 @@ model kriteria {
 }
 
 model penilaian {
-  kode_penilaian String   @id
   kode_saham     String
   kode_kriteria  String
   nilai          Float
-  kriteria       kriteria @relation(fields: [kode_kriteria], references: [kode_kriteria])
-  saham          saham    @relation(fields: [kode_saham], references: [kode_saham])
+  kode_penilaian String   @id
+  kriteria       kriteria @relation(fields: [kode_kriteria], references: [kode_kriteria], onDelete: NoAction)
+  saham          saham    @relation(fields: [kode_saham], references: [kode_saham], onDelete: NoAction)
 
   @@index([kode_kriteria], map: "penilaian_kode_kriteria_fkey")
   @@index([kode_saham], map: "penilaian_kode_saham_fkey")
 }
 
 model hasil {
-  kode_hasil       String @id
-  username         String
   kode_saham       String
   nilai_preferensi Float
   ranking          Int
-  saham            saham  @relation(fields: [kode_saham], references: [kode_saham])
-  users            users  @relation(fields: [username], references: [username])
+  username         String
+  kode_hasil       String @id
+  saham            saham  @relation(fields: [kode_saham], references: [kode_saham], onDelete: NoAction)
+  users            users  @relation(fields: [username], references: [username], onDelete: NoAction)
 
   @@index([kode_saham], map: "hasil_kode_saham_fkey")
   @@index([username], map: "hasil_username_fkey")
@@ -72,8 +72,8 @@ model user_kriteria {
   username      String
   kode_kriteria String
   bobot         Float
-  kriteria      kriteria @relation(fields: [kode_kriteria], references: [kode_kriteria])
-  users         users    @relation(fields: [username], references: [username])
+  kriteria      kriteria @relation(fields: [kode_kriteria], references: [kode_kriteria], onDelete: NoAction)
+  users         users    @relation(fields: [username], references: [username], onDelete: NoAction)
 
   @@id([username, kode_kriteria])
   @@index([kode_kriteria], map: "user_kriteria_kode_kriteria_fkey")

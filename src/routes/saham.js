@@ -170,4 +170,37 @@ router.delete("/:kode_saham", async (req, res) => {
   }
 });
 
+// ======================================
+// GET HISTORICAL PRICE DATA (Yahoo Finance)
+// ======================================
+router.get("/historical/:kode", async (req, res) => {
+  try {
+    const yahooFinance = require('yahoo-finance2').default;
+    const kode = req.params.kode.split('_')[0]; // clean user suffix
+    const tahun = parseInt(req.query.tahun) || 5;
+    const ticker = `${kode}.JK`;
+
+    const now = new Date();
+    const start = new Date(now);
+    start.setFullYear(now.getFullYear() - tahun);
+
+    const data = await yahooFinance.historical(ticker, {
+      period1: start.toISOString().split('T')[0],
+      period2: now.toISOString().split('T')[0],
+      interval: '1mo'
+    });
+
+    const formatted = data.map(d => ({
+      tanggal: d.date instanceof Date ? d.date.toISOString().split('T')[0] : d.date,
+      close: d.close,
+      volume: d.volume
+    }));
+
+    res.json(formatted);
+  } catch (error) {
+    console.error('[HISTORICAL] Error:', error.message);
+    res.status(500).json({ error: error.message, data: [] });
+  }
+});
+
 module.exports = router;
