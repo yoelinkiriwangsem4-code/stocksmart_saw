@@ -83,6 +83,19 @@ app.get("/", (req, res) => {
 });
 
 // =======================
+// PACKAGE JSON VIEWER
+// =======================
+
+app.get("/api/package-info", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "../package.json"
+    )
+  );
+});
+
+// =======================
 // SERVER
 // =======================
 
